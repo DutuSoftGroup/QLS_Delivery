@@ -132,6 +132,7 @@ inherited fFormBill: TfFormBill
       Style.BorderStyle = ebsSingle
       Style.HotTrack = False
       TabOrder = 12
+      Transparent = True
       Width = 121
     end
     object EditStock: TcxComboBox [10]
@@ -150,16 +151,16 @@ inherited fFormBill: TfFormBill
       TabOrder = 3
       Width = 121
     end
-    object cbxSampleID: TcxComboBox [12]
+    object EditSampleID: TcxComboBox [12]
       Left = 277
       Top = 290
       ParentFont = False
       Properties.DropDownListStyle = lsFixedList
-      Properties.OnChange = cbxSampleIDPropertiesChange
+      Properties.OnEditValueChanged = EditSampleIDPropertiesEditValueChanged
       TabOrder = 9
       Width = 103
     end
-    object cbxCenterID: TcxComboBox [13]
+    object EditCenterID: TcxComboBox [13]
       Left = 93
       Top = 290
       ParentFont = False
@@ -167,11 +168,12 @@ inherited fFormBill: TfFormBill
       TabOrder = 8
       Width = 121
     end
-    object cxLabel1: TcxLabel [14]
+    object SumSap: TcxLabel [14]
       Left = 385
       Top = 290
       AutoSize = False
       ParentFont = False
+      Transparent = True
       Height = 16
       Width = 39
     end
@@ -257,18 +259,18 @@ inherited fFormBill: TfFormBill
           ShowBorder = False
           object dxLayout1Item14: TdxLayoutItem
             Caption = #29983' '#20135' '#32447':'
-            Control = cbxCenterID
+            Control = EditCenterID
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item5: TdxLayoutItem
             Caption = #35797#26679#32534#21495':'
-            Control = cbxSampleID
+            Control = EditSampleID
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item15: TdxLayoutItem
             Caption = 'cxLabel1'
             ShowCaption = False
-            Control = cxLabel1
+            Control = SumSap
             ControlOptions.ShowBorder = False
           end
         end

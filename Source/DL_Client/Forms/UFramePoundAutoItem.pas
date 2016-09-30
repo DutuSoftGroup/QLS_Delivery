@@ -122,6 +122,8 @@ type
     procedure OnCreateFrame; override;
     procedure OnDestroyFrame; override;
     //子类继承
+    procedure PoundOutWeight;
+    //地磅表头超重
     property PoundTunnel: PPTTunnelItem read FPoundTunnel write SetTunnel;
     //属性相关
     property Additional: TStrings read FListA write FListA;
@@ -162,6 +164,11 @@ begin
   //关闭表头端口
   FListA.Free;
   inherited;
+end;
+
+procedure TfFrameAutoPoundItem.PoundOutWeight;
+begin
+  PlayVoice(FPoundTunnel.FName + '超载');
 end;
 
 //Desc: 设置运行状态图标

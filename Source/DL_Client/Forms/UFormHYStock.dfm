@@ -58,6 +58,7 @@ object fFormHYStock: TfFormHYStock
           Kind = bkEllipsis
         end>
       Properties.MaxLength = 15
+      Properties.ReadOnly = True
       Properties.OnButtonClick = EditIDPropertiesButtonClick
       TabOrder = 0
       Width = 121

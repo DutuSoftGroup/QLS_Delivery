@@ -63,6 +63,6 @@
   //华益读头
   {.$DEFINE GLPURCH} 
   //古浪采购
-  {$DEFINE YDKP} 
+  {$DEFINE YDKP}
   //永登开票
 {$ENDIF}

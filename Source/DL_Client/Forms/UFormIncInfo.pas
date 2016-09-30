@@ -10,8 +10,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   UDataModule, StdCtrls, ExtCtrls, dxLayoutControl, cxContainer, cxEdit,
   cxTextEdit, cxControls, cxMemo, UFormBase, cxGraphics, cxLookAndFeels,
-  cxLookAndFeelPainters, dxSkinsCore, dxSkinsDefaultPainters,
-  dxSkinscxPCPainter, dxLayoutcxEditAdapters;
+  cxLookAndFeelPainters;
 
 type
   TfFormIncInfo = class(TBaseForm)

@@ -310,10 +310,10 @@ var nStr: string;
 begin
   if EditStock.Properties.Items.Count < 1 then
   begin
-    nStr := 'D_Value=Select D_Memo,D_Value From %s Where D_Name=''%s''';
+    nStr := 'D_Value=Select D_Memo,D_Value From %s Where D_Name=''%s'' And D_Index>0';
     nStr := Format(nStr, [sTable_SysDict, sFlag_StockItem]);
 
-    FDM.FillStringsData(EditStock.Properties.Items, nStr, -1, '、');
+    FDM.FillStringsData(EditStock.Properties.Items, nStr, -1, '.');
     AdjustCtrlData(Self);
   end;
 
@@ -331,9 +331,17 @@ end;
 
 //Desc: 设置类型
 procedure TfFormHYStock.EditStockPropertiesEditValueChanged(Sender: TObject);
-var nStr: string;
+var nStr, nStockName, nStockType: string;
 begin
-  nStr := GetPinYinOfStr(EditStock.Text);
+  if not EditStock.Focused then Exit;
+  //xxxxx
+
+  nStockName := EditStock.Text;
+  nStockType := Copy(nStockName, 1, 1);
+  Delete(nStockName, 1, 2);
+  //xxxxx
+
+  nStr := GetPinYinOfStr(nStockName);
   if Pos('kzf', nStr) > 0 then //矿渣粉
   begin
     Label8.Caption := '密度g/cm:'; cxTextEdit2.Text := '≥';
@@ -356,14 +364,23 @@ begin
   Label18.Caption := Label2.Caption;
   Label26.Caption := Label10.Caption;
 
-  SetCtrlData(EditType, Copy(EditStock.Text, 1, 1));
+  SetCtrlData(EditType, nStockType);
+
+  nStr := 'Select D_ParamC From %s Where D_Name=''%s'' And D_Memo=''%s'' ' +
+          'And D_Value=''%s''';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_StockItem, nStockType, nStockName]);
+
+  with FDM.QueryTemp(nStr) do
+  if RecordCount > 0 then
+       EditID.Text := Fields[0].AsString
+  else EditID.Properties.ReadOnly := False;
 end;
 
 //Desc: 生成随机编号
 procedure TfFormHYStock.EditIDPropertiesButtonClick(Sender: TObject;
   AButtonIndex: Integer);
 begin
-  EditID.Text := FDM.GetRandomID(FPrefixID, FIDLength);
+  //EditID.Text := FDM.GetRandomID(FPrefixID, FIDLength);
 end;
 
 //Desc: 保存数据

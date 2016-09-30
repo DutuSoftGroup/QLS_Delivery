@@ -278,7 +278,7 @@ procedure InitCenter(const nStockNo,nType: string; const nCbx:TcxComboBox);
 //初始化生产线ID
 function CheckTruckOK(const nTruck:string):Boolean;
 //检查车辆上次出厂是否超过一个小时
-procedure InitSampleID(const nStockName,nType: string; const nCbx:TcxComboBox);
+procedure InitSampleID(const nStockNo,nType: string; const nCbx:TcxComboBox);
 //初始化试样编号
 function GetSumTonnage(const nSampleID: string):Double;
 //获取此试样编号已装吨数
@@ -1600,22 +1600,20 @@ begin
   nFoutData:=nOut.FData;
   WriteLog('SaveLadingBills: '+nFoutData);
   if (not Result) or (nOut.FData = '') or (Pos('余额不足',nOut.FData)>0) then Exit;
-  if (Pos('PB',nOut.FData)>0) and (Length(nOut.FData)=11) then
-  begin
-    if Assigned(nTunnel) then //过磅称重
-    begin
-      nList := TStringList.Create;
-      try
-        CapturePicture(nTunnel, nList);
-        //capture file
 
-        for nIdx:=0 to nList.Count - 1 do
-          SavePicture(nOut.FData, nData[0].FTruck,
-                                  nData[0].FStockName, nList[nIdx]);
-        //save file
-      finally
-        nList.Free;
-      end;
+  if Assigned(nTunnel) then //过磅称重
+  begin
+    nList := TStringList.Create;
+    try
+      CapturePicture(nTunnel, nList);
+      //capture file
+
+      for nIdx:=0 to nList.Count - 1 do
+        SavePicture(nOut.FData, nData[0].FTruck,
+                                nData[0].FStockName, nList[nIdx]);
+      //save file
+    finally
+      nList.Free;
     end;
   end;
 end;
@@ -2655,14 +2653,15 @@ begin
   end;
 end;
 
-procedure InitSampleID(const nStockName,nType: string; const nCbx:TcxComboBox);
+procedure InitSampleID(const nStockNO,nType: string; const nCbx:TcxComboBox);
 var nSQL:string;
-    nIdx:Integer;
 begin
   nCbx.Properties.Items.Clear;
-  nSQL := 'select IsNull(R_SerialNo,'''') as R_SerialNo,R_BatQuaStart,R_Date from %s a,%s b '+
-          'where a.R_PID = b.P_ID and b.P_Stock= ''%s'' and b.P_Type=''%s'' and R_BatValid=''%s'' ';
-  nSQL := Format(nSQL,[sTable_StockRecord, sTable_StockParam, nStockName, nType, sFlag_Yes]);
+  nSQL := 'Select IsNull(R_SerialNo,'''') as R_SerialNo,R_BatQuaStart,R_Date ' +
+          'From %s Left Join %s on R_PID = P_ID '+
+          'where P_ID=''%s%s'' and R_BatValid=''%s'' ';
+  nSQL := Format(nSQL,[sTable_StockRecord, sTable_StockParam,
+          nStockNO, nType, sFlag_Yes]);
   with FDM.QueryTemp(nSQL) do
   begin
     if RecordCount > 0 then
@@ -2731,12 +2730,11 @@ function LoadNoSampleID(const nStockNo: string):Boolean;
 var nStr:string;
 begin
   Result:= False;
-  nStr := 'Select D_Value From %s Where D_Name=''%s'' and D_Value=''%s'' ';
-  nStr := Format(nStr, [sTable_SysDict, sFlag_NoSampleID, nStockNo]);
+  nStr := 'Select D_Index From %s Where D_Name=''%s'' And D_ParamC=''%s''';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_StockItem, nStockNo]);
   with FDM.QueryTemp(nStr) do
-  begin
-    if RecordCount > 0 then Result:= True;
-  end;
+  if RecordCount > 0 then
+    Result := Fields[0].AsInteger <= 0;
 end;
 
 
