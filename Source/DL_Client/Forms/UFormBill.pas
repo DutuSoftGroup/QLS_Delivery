@@ -57,6 +57,10 @@ type
     procedure BtnOKClick(Sender: TObject);
     procedure EditLadingKeyPress(Sender: TObject; var Key: Char);
     procedure EditSampleIDPropertiesEditValueChanged(Sender: TObject);
+
+    //查询此车是否有未完成的采购订单
+    function GetUnfinishedSupplyOrder(const nTruckno:string):boolean;
+    procedure EditTruckExit(Sender: TObject);
   protected
     { Protected declarations }
     FBuDanFlag: string;
@@ -77,7 +81,7 @@ implementation
 {$R *.dfm}
 uses
   ULibFun, DB, IniFiles, UMgrControl, UAdjustForm, UFormBase, UBusinessPacker,
-  UDataModule, USysPopedom, USysBusiness, USysDB, USysGrid, USysConst;
+  UDataModule, USysPopedom, USysBusiness, USysDB, USysGrid, USysConst,USysLoger;
 
 type
   TCommonInfo = record
@@ -208,6 +212,7 @@ begin
   if Key = Char(VK_RETURN) then
   begin
     Key := #0;
+    if GetUnfinishedSupplyOrder(EditTruck.Text) then Exit;
 
     if Sender = EditStock then ActiveControl := EditValue else
     if Sender = EditValue then ActiveControl := BtnAdd else
@@ -652,6 +657,38 @@ begin
   nVal := Float2Float(nTVal - nVal, cPrecision, False);
 
   SumSap.Caption:=FloatToStr(nVal);
+end;
+
+function TfFormBill.GetUnfinishedSupplyOrder(
+  const nTruckno: string): boolean;
+var
+  nSql,nStr:string;
+begin
+  nSql := 'select * from %s where D_Card<>'''' and D_Truck=''%s''';
+  nSql :=Format(nSql,[sTable_OrderDtl,nTruckno]);
+
+  try
+    Result := FDM.QueryTemp(nSql).RecordCount>0;
+    if Result then
+    begin
+      nStr := '车牌号[ %s ]存在未完成的采购订单！';
+      nStr := Format(nStr,[nTruckno]);
+      ShowMsg(nStr, sHint);
+      gSysLoger.AddLog(TfFormBill, '开提货单', nStr);
+    end;
+  except
+    on E:Exception do
+    begin
+      nSql := nsql+':'+e.Message;
+      ShowMsg(nSql, sHint);
+      gSysLoger.AddLog(TfFormBill, '开提货单', nsql);
+    end;
+  end;
+end;
+
+procedure TfFormBill.EditTruckExit(Sender: TObject);
+begin
+  BtnOK.Enabled := not GetUnfinishedSupplyOrder(EditTruck.Text);
 end;
 
 initialization

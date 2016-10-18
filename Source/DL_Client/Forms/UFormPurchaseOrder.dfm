@@ -114,6 +114,7 @@ inherited fFormPurchaseOrder: TfFormPurchaseOrder
       Style.BorderStyle = ebsSingle
       Style.ButtonStyle = btsHotFlat
       TabOrder = 6
+      OnExit = EditTruckExit
       OnKeyPress = EditLadingKeyPress
       Width = 135
     end
@@ -141,67 +142,70 @@ inherited fFormPurchaseOrder: TfFormPurchaseOrder
     inherited dxLayout1Group_Root: TdxLayoutGroup
       inherited dxGroup1: TdxLayoutGroup
         object dxGroupLayout1Group2: TdxLayoutGroup
-          ShowCaption = False
+          CaptionOptions.Visible = False
+          ButtonOptions.Buttons = <>
           Hidden = True
           ShowBorder = False
           object dxLayout1Item5: TdxLayoutItem
-            Caption = #30003#35831#21333#21495':'
+            CaptionOptions.Text = #30003#35831#21333#21495':'
             Control = EditID
             ControlOptions.ShowBorder = False
           end
           object dxlytmLayout1Item3: TdxLayoutItem
-            Caption = #20379' '#24212' '#21830':'
+            CaptionOptions.Text = #20379' '#24212' '#21830':'
             Control = EditProvider
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item9: TdxLayoutItem
-            Caption = #21407' '#26448' '#26009':'
+            CaptionOptions.Text = #21407' '#26448' '#26009':'
             Control = EditMate
             ControlOptions.ShowBorder = False
           end
         end
         object dxlytmLayout1Item6: TdxLayoutItem
-          Caption = #19994' '#21153' '#21592':'
+          CaptionOptions.Text = #19994' '#21153' '#21592':'
           Control = EditSalesMan
           ControlOptions.ShowBorder = False
         end
         object dxlytmLayout1Item8: TdxLayoutItem
-          Caption = #25152#23646#21306#22495':'
+          CaptionOptions.Text = #25152#23646#21306#22495':'
           Control = EditArea
           ControlOptions.ShowBorder = False
         end
         object dxlytmLayout1Item7: TdxLayoutItem
-          Caption = #39033#30446#21517#31216':'
+          CaptionOptions.Text = #39033#30446#21517#31216':'
           Control = EditProject
           ControlOptions.ShowBorder = False
         end
       end
       object dxGroup2: TdxLayoutGroup [1]
-        AutoAligns = [aaHorizontal]
         AlignVert = avClient
-        Caption = #25552#21333#20449#24687
+        CaptionOptions.Text = #25552#21333#20449#24687
+        ButtonOptions.Buttons = <>
         LayoutDirection = ldHorizontal
         object dxLayout1Group2: TdxLayoutGroup
-          ShowCaption = False
+          CaptionOptions.Visible = False
+          ButtonOptions.Buttons = <>
           Hidden = True
           ShowBorder = False
           object dxlytmLayout1Item12: TdxLayoutItem
-            Caption = #25552#36135#36710#36742':'
+            CaptionOptions.Text = #25552#36135#36710#36742':'
             Control = EditTruck
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item3: TdxLayoutItem
-            Caption = #21345#29255#31867#22411':'
+            CaptionOptions.Text = #21345#29255#31867#22411':'
             Control = EditCardType
             ControlOptions.ShowBorder = False
           end
         end
         object dxLayout1Group4: TdxLayoutGroup
-          ShowCaption = False
+          CaptionOptions.Visible = False
+          ButtonOptions.Buttons = <>
           Hidden = True
           ShowBorder = False
           object dxLayout1Item8: TdxLayoutItem
-            Caption = #21150#29702#21544#25968':'
+            CaptionOptions.Text = #21150#29702#21544#25968':'
             Control = EditValue
             ControlOptions.ShowBorder = False
           end

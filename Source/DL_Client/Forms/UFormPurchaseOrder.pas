@@ -46,6 +46,10 @@ type
     procedure EditLadingKeyPress(Sender: TObject; var Key: Char);
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
+
+    //查询未完成的提货单
+    function GetUnfinishedSalesOrder(const nTruckno:string):Boolean;
+    procedure EditTruckExit(Sender: TObject);
   protected
     { Protected declarations }
     FCardData, FListA: TStrings;
@@ -69,7 +73,7 @@ implementation
 {$R *.dfm}
 uses
   ULibFun, DB, IniFiles, UMgrControl, UAdjustForm, UFormBase, UBusinessPacker,
-  UDataModule, USysBusiness, USysDB, USysGrid, USysConst;
+  UDataModule, USysBusiness, USysDB, USysGrid, USysConst,USysLoger;
 
 var
   gForm: TfFormPurchaseOrder = nil;
@@ -149,7 +153,8 @@ begin
   if Key = Char(VK_RETURN) then
   begin
     Key := #0;
-
+    if GetUnfinishedSalesOrder(EditTruck.Text) then Exit;
+    
     if Sender = EditValue then
          BtnOK.Click
     else Perform(WM_NEXTDLGCTL, 0, 0);
@@ -256,6 +261,38 @@ begin
 
   ModalResult := mrOK;
   ShowMsg('采购订单保存成功', sHint);
+end;
+
+function TfFormPurchaseOrder.GetUnfinishedSalesOrder(
+  const nTruckno: string): Boolean;
+var
+  nSql,nStr:string;
+begin
+  nSql := 'select * from %s where L_Card<>'''' and l_truck=''%s''';
+  nSql := Format(nSql,[sTable_Bill,nTruckno]);
+
+  try
+    Result := FDM.QueryTemp(nSql).RecordCount>0;
+    if Result then
+    begin
+      nStr := '车牌号[ %s ]存在未完成的提货单！';
+      nStr := Format(nStr,[nTruckno]);
+      ShowMsg(nStr, sHint);
+      gSysLoger.AddLog(TfFormPurchaseOrder, '开采购单', nStr);
+    end;
+  except
+    on E:Exception do
+    begin
+      nSql := nsql+':'+e.Message;
+      ShowMsg(nSql, sHint);
+      gSysLoger.AddLog(TfFormPurchaseOrder, '开采购单', nSql);
+    end;
+  end;
+end;
+
+procedure TfFormPurchaseOrder.EditTruckExit(Sender: TObject);
+begin
+  BtnOK.Enabled := not GetUnfinishedSalesOrder(EditTruck.Text);
 end;
 
 initialization

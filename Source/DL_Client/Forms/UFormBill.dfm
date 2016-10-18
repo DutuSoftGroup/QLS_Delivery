@@ -84,6 +84,7 @@ inherited fFormBill: TfFormBill
       Style.BorderColor = clWindowFrame
       Style.BorderStyle = ebsSingle
       TabOrder = 2
+      OnExit = EditTruckExit
       OnKeyPress = EditLadingKeyPress
       Width = 116
     end
@@ -141,6 +142,10 @@ inherited fFormBill: TfFormBill
       ParentFont = False
       Properties.DropDownListStyle = lsEditFixedList
       Properties.OnChange = EditStockPropertiesChange
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
+      Style.ButtonStyle = btsHotFlat
+      Style.PopupBorderStyle = epbsSingle
       TabOrder = 4
       Width = 283
     end
@@ -148,6 +153,8 @@ inherited fFormBill: TfFormBill
       Left = 93
       Top = 182
       ParentFont = False
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
       TabOrder = 3
       Width = 121
     end
@@ -157,6 +164,10 @@ inherited fFormBill: TfFormBill
       ParentFont = False
       Properties.DropDownListStyle = lsFixedList
       Properties.OnEditValueChanged = EditSampleIDPropertiesEditValueChanged
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
+      Style.ButtonStyle = btsHotFlat
+      Style.PopupBorderStyle = epbsSingle
       TabOrder = 9
       Width = 103
     end
@@ -165,6 +176,10 @@ inherited fFormBill: TfFormBill
       Top = 290
       ParentFont = False
       Properties.DropDownListStyle = lsFixedList
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
+      Style.ButtonStyle = btsHotFlat
+      Style.PopupBorderStyle = epbsSingle
       TabOrder = 8
       Width = 121
     end
@@ -184,68 +199,68 @@ inherited fFormBill: TfFormBill
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Group2: TdxLayoutGroup
-          ShowCaption = False
+          CaptionOptions.Visible = False
+          ButtonOptions.Buttons = <>
           Hidden = True
           LayoutDirection = ldHorizontal
           ShowBorder = False
           object dxLayout1Item12: TdxLayoutItem
-            Caption = #25552#36135#26041#24335':'
+            CaptionOptions.Text = #25552#36135#26041#24335':'
             Control = EditLading
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item9: TdxLayoutItem
-            AutoAligns = [aaVertical]
             AlignHorz = ahClient
-            Caption = #25552#36135#36710#36742':'
+            CaptionOptions.Text = #25552#36135#36710#36742':'
             Control = EditTruck
             ControlOptions.ShowBorder = False
           end
         end
         object dxLayout1Item6: TdxLayoutItem
-          Caption = #25552#21333#21495'('#32463'):'
+          CaptionOptions.Text = #25552#21333#21495'('#32463'):'
           Control = EditJXSTHD
           ControlOptions.ShowBorder = False
         end
       end
       object dxGroup2: TdxLayoutGroup [1]
-        AutoAligns = [aaHorizontal]
         AlignVert = avClient
-        Caption = #25552#21333#26126#32454
+        CaptionOptions.Text = #25552#21333#26126#32454
+        ButtonOptions.Buttons = <>
         object dxLayout1Group5: TdxLayoutGroup
-          ShowCaption = False
+          CaptionOptions.Visible = False
+          ButtonOptions.Buttons = <>
           Hidden = True
           ShowBorder = False
           object dxLayout1Group8: TdxLayoutGroup
-            ShowCaption = False
+            CaptionOptions.Visible = False
+            ButtonOptions.Buttons = <>
             Hidden = True
             LayoutDirection = ldHorizontal
             ShowBorder = False
             object dxLayout1Item7: TdxLayoutItem
-              Caption = #27700#27877#31867#22411':'
+              CaptionOptions.Text = #27700#27877#31867#22411':'
               Control = EditStock
               ControlOptions.ShowBorder = False
             end
             object dxLayout1Item10: TdxLayoutItem
-              AutoAligns = [aaVertical]
               AlignHorz = ahRight
               Control = BtnAdd
               ControlOptions.ShowBorder = False
             end
           end
           object dxLayout1Group7: TdxLayoutGroup
-            ShowCaption = False
+            CaptionOptions.Visible = False
+            ButtonOptions.Buttons = <>
             Hidden = True
             LayoutDirection = ldHorizontal
             ShowBorder = False
             object dxLayout1Item8: TdxLayoutItem
-              AutoAligns = [aaVertical]
               AlignHorz = ahClient
-              Caption = #21150#29702#21544#25968':'
+              CaptionOptions.Text = #21150#29702#21544#25968':'
               Control = EditValue
               ControlOptions.ShowBorder = False
             end
             object dxLayout1Item11: TdxLayoutItem
-              AutoAligns = [aaVertical]
               AlignHorz = ahRight
               Control = BtnDel
               ControlOptions.ShowBorder = False
@@ -253,29 +268,29 @@ inherited fFormBill: TfFormBill
           end
         end
         object dxLayout1Group3: TdxLayoutGroup
-          ShowCaption = False
+          CaptionOptions.Visible = False
+          ButtonOptions.Buttons = <>
           Hidden = True
           LayoutDirection = ldHorizontal
           ShowBorder = False
           object dxLayout1Item14: TdxLayoutItem
-            Caption = #29983' '#20135' '#32447':'
+            CaptionOptions.Text = #29983' '#20135' '#32447':'
             Control = EditCenterID
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item5: TdxLayoutItem
-            Caption = #35797#26679#32534#21495':'
+            CaptionOptions.Text = #35797#26679#32534#21495':'
             Control = EditSampleID
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item15: TdxLayoutItem
-            Caption = 'cxLabel1'
-            ShowCaption = False
+            CaptionOptions.Text = 'cxLabel1'
+            CaptionOptions.Visible = False
             Control = SumSap
             ControlOptions.ShowBorder = False
           end
         end
         object dxLayout1Item4: TdxLayoutItem
-          AutoAligns = [aaHorizontal]
           AlignVert = avClient
           Control = ListBill
           ControlOptions.ShowBorder = False

@@ -494,10 +494,10 @@ const
   -----------------------------------------------------------------------------}
 
   sSQL_NewCustomer = 'Create Table $Table(R_ID $Inc, C_ID varChar(15), ' +
-       'C_Name varChar(80), C_PY varChar(80), C_Addr varChar(100), ' +
+       'C_Name varChar(255), C_PY varChar(80), C_Addr varChar(100), ' +
        'C_FaRen varChar(50), C_LiXiRen varChar(50), C_WeiXin varChar(15),' +
        'C_Phone varChar(15), C_Fax varChar(15), C_Tax varChar(32),' +
-       'C_Bank varChar(35), C_Account varChar(18), C_SaleMan varChar(15),' +
+       'C_Bank varChar(35), C_Account varChar(64), C_SaleMan varChar(15),' +
        'C_Param varChar(32), C_Memo varChar(50), C_XuNi Char(1),' +
        'C_Factory varChar(50), C_ToUser varChar(50), C_IsBind Char(1),'+
        'C_CredMax $Float Default 0, C_MaCredLmt varChar(32),'+
@@ -1413,7 +1413,7 @@ const
    *.M_Weighning: ÊÇ·ñ¹ý°õ
   -----------------------------------------------------------------------------}
 
-  sSQL_NewStockParam = 'Create Table $Table(P_ID varChar(15), P_Stock varChar(30),' +
+  sSQL_NewStockParam = 'Create Table $Table(P_ID varChar(15), P_Stock varChar(60),' +
        'P_Type Char(1), P_Name varChar(50), P_QLevel varChar(20), P_Memo varChar(50),' +
        'P_MgO varChar(20), P_SO3 varChar(20), P_ShaoShi varChar(20),' +
        'P_CL varChar(20), P_BiBiao varChar(20), P_ChuNing varChar(20),' +

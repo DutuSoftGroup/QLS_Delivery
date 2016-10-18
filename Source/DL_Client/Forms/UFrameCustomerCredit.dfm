@@ -58,6 +58,9 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
           Kind = bkEllipsis
         end>
       Properties.OnButtonClick = EditIDPropertiesButtonClick
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
+      Style.ButtonStyle = btsHotFlat
       TabOrder = 0
       OnKeyPress = OnCtrlKeyPress
       Width = 105
@@ -72,6 +75,9 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
           Kind = bkEllipsis
         end>
       Properties.OnButtonClick = EditIDPropertiesButtonClick
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
+      Style.ButtonStyle = btsHotFlat
       TabOrder = 1
       OnKeyPress = OnCtrlKeyPress
       Width = 120
@@ -81,6 +87,8 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
       Top = 93
       Hint = 'T.C_ID'
       ParentFont = False
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
       TabOrder = 3
       Width = 105
     end
@@ -89,6 +97,8 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
       Top = 93
       Hint = 'T.C_Name'
       ParentFont = False
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
       TabOrder = 4
       Width = 120
     end
@@ -97,6 +107,8 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
       Top = 93
       Hint = 'T.A_CreditLimit'
       ParentFont = False
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
       TabOrder = 5
       Width = 74
     end
@@ -104,6 +116,8 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
       Left = 593
       Top = 93
       ParentFont = False
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
       TabOrder = 6
       Width = 121
     end
@@ -117,47 +131,49 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
           Kind = bkEllipsis
         end>
       Properties.OnButtonClick = EditDatePropertiesButtonClick
+      Style.BorderColor = clWindowFrame
+      Style.BorderStyle = ebsSingle
+      Style.ButtonStyle = btsHotFlat
       TabOrder = 2
       Width = 176
     end
     inherited dxGroup1: TdxLayoutGroup
       inherited GroupSearch1: TdxLayoutGroup
         object dxLayout1Item1: TdxLayoutItem
-          Caption = #23458#25143#32534#21495':'
+          CaptionOptions.Text = #23458#25143#32534#21495':'
           Control = EditID
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item2: TdxLayoutItem
-          Caption = #23458#25143#21517#31216':'
+          CaptionOptions.Text = #23458#25143#21517#31216':'
           Control = EditName
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item6: TdxLayoutItem
-          Caption = #26085#26399#31579#36873':'
+          CaptionOptions.Text = #26085#26399#31579#36873':'
           Control = EditDate
           ControlOptions.ShowBorder = False
         end
       end
       inherited GroupDetail1: TdxLayoutGroup
         object dxLayout1Item3: TdxLayoutItem
-          Caption = #23458#25143#32534#21495':'
+          CaptionOptions.Text = #23458#25143#32534#21495':'
           Control = EditCusID
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item4: TdxLayoutItem
-          Caption = #23458#25143#21517#31216':'
+          CaptionOptions.Text = #23458#25143#21517#31216':'
           Control = EditCusName
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item5: TdxLayoutItem
-          Caption = #20449#29992#37329#39069'('#20803'):'
+          CaptionOptions.Text = #20449#29992#37329#39069'('#20803'):'
           Control = EditMoney
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item7: TdxLayoutItem
-          AutoAligns = [aaVertical]
           AlignHorz = ahClient
-          Caption = #22791#27880#20449#24687':'
+          CaptionOptions.Text = #22791#27880#20449#24687':'
           Control = EditMemo
           ControlOptions.ShowBorder = False
         end

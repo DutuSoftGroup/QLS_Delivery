@@ -14,7 +14,7 @@ uses
   cxMaskEdit, cxButtonEdit, cxTextEdit, ADODB, cxLabel, UBitmapPanel,
   cxSplitter, cxGridLevel, cxClasses, cxGridCustomView,
   cxGridCustomTableView, cxGridTableView, cxGridDBTableView, cxGrid,
-  ComCtrls, ToolWin;
+  ComCtrls, ToolWin, dxLayoutcxEditAdapters, cxGroupBox, cxRadioGroup;
 
 type
   TfFrameSaleDetailQuery = class(TfFrameNormal)
@@ -36,11 +36,14 @@ type
     dxLayout1Item4: TdxLayoutItem;
     EditBill: TcxButtonEdit;
     dxLayout1Item7: TdxLayoutItem;
+    cxRadioGroupType: TcxRadioGroup;
+    dxLayout1Item9: TdxLayoutItem;
     procedure EditDatePropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure mniN1Click(Sender: TObject);
+    procedure cxRadioGroupTypeClick(Sender: TObject);
   private
     { Private declarations }
   protected
@@ -95,8 +98,13 @@ begin
 
   if FJBWhere = '' then
   begin
-    Result := Result + 'Where (L_OutFact>=''$S'' and L_OutFact <''$End'')';
-
+    if cxRadioGroupType.ItemIndex=0 then
+    begin
+      Result := Result + 'Where (L_OutFact>=''$S'' and L_OutFact <''$End'')';
+    end
+    else begin
+      Result := Result + 'Where (L_MDate>=''$S'' and L_MDate <''$End'')';
+    end;
     if nWhere <> '' then
       Result := Result + ' And (' + nWhere + ')';
     //xxxxx
@@ -172,6 +180,12 @@ begin
   finally
     FJBWhere := '';
   end;
+end;
+
+procedure TfFrameSaleDetailQuery.cxRadioGroupTypeClick(Sender: TObject);
+begin
+//  inherited;
+  InitFormData(FWhere);
 end;
 
 initialization

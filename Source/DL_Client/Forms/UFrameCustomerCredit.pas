@@ -14,7 +14,7 @@ uses
   cxTextEdit, cxMaskEdit, cxButtonEdit, ADODB, cxLabel, UBitmapPanel,
   cxSplitter, cxGridLevel, cxClasses, cxGridCustomView,
   cxGridCustomTableView, cxGridTableView, cxGridDBTableView, cxGrid,
-  ComCtrls, ToolWin;
+  ComCtrls, ToolWin, dxLayoutcxEditAdapters;
 
 type
   TfFrameCustomerCredit = class(TfFrameNormal)
@@ -109,13 +109,18 @@ begin
   nDefault := False;
   //user define
 
-  nSQL := 'Select cus.*,ca.* From $Cus cus ' +
-          ' Left Join $CA ca On ca.A_CID=cus.C_ID ' +
-          'Where (A_CreditLimit >= 0)';
+//  nSQL := 'Select cus.*,ca.* From $Cus cus ' +
+//          ' Left Join $CA ca On ca.A_CID=cus.C_ID ' +
+//          'Where (A_CreditLimit >= 0)';
+
+  nSQL := 'Select cus.*,ca.*,credit.C_CashBalance From $Cus cus'+
+          ' Left Join $CA ca On ca.A_CID=cus.C_ID'+
+          ' left join $Crdeit credit on cus.C_id=credit.C_CusID'+
+          ' Where (ca.A_CreditLimit >= 0)';
   //xxxxx
-  
+
   nSQL := MacroValue(nSQL, [MI('$Cus', sTable_Customer),
-          MI('$CA', sTable_CusAccount)]);
+          MI('$CA', sTable_CusAccount),MI('$Crdeit',sTable_CusCredit)]);
   //xxxxx
   
   if FWhere <> '' then
