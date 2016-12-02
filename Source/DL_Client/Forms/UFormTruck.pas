@@ -141,6 +141,12 @@ begin
     ShowMsg('«Î ‰»Î≥µ≈∆∫≈¬Î', sHint);
     Exit;
   end;
+  if not IsNumber(EditPrePValue.Text,True) then
+  begin
+    ActiveControl := EditPrePValue;
+    ShowMsg('«Î ‰»Î‘§÷√∆§÷ÿ', sHint);
+    Exit;
+  end;
 
   if CheckValid.Checked then
        nV := sFlag_Yes

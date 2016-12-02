@@ -91,7 +91,9 @@ begin
 
   nHint := '';
   for nIdx:=Low(gBills) to High(gBills) do
-  if gBills[nIdx].FStatus = sFlag_TruckNone then
+  //if gBills[nIdx].FStatus = sFlag_TruckNone then
+  if (gBills[nIdx].FStatus <> sFlag_TruckBFP) and
+    (gBills[nIdx].FStatus <> sFlag_TruckZT) then
   begin
     nStr := '¡ù.µ¥ºÅ:[ %s ] ×´Ì¬:[ %-6s -> %-6s ]   ';
     if nIdx < High(gBills) then nStr := nStr + #13#10;

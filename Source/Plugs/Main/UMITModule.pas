@@ -15,7 +15,7 @@ uses
   {$IFDEF HardMon}UEventHardware, UWorkerHardware,{$ENDIF} UWorkerBusiness,
   {$IFDEF MicroMsg}UMgrRemoteWXMsg,{$ENDIF} UMemDataPool, UMgrWeiXinSendMsg,//by lih 2016-06-04
   UMgrDBConn, UMgrParam, UMgrPlug, UMgrChannel, UChannelChooser, USAPConnection,
-  USyncAXBaseInfo;
+  USyncAXBaseInfo, UWorkerBusinessDuanDao;
   //by lih 2016-06-29
 
 procedure InitSystemObject(const nMainForm: THandle);

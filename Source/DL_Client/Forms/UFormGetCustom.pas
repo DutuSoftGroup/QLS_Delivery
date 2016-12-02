@@ -35,7 +35,7 @@ type
     { Private declarations }
     FStatus:Boolean;
     //客户信息状态 False：无 True：有
-    FCusID,FCusName: string;
+    FCusID,FCusName,FSaleID,FXSQYMC: string;
     //客户信息
     FDataAreaID: string;
     //账套
@@ -85,6 +85,8 @@ begin
     begin
       nP.FParamB := FCusID;
       nP.FParamC := FCusName;
+      nP.FParamD := FSaleID;
+      nP.FParamE := FXSQYMC;
     end;
     Free;
   end;
@@ -144,34 +146,26 @@ end;
 //Parm: 查询类型(10: 按名称;20: 按人员)
 //Desc: 按指定类型查询合同
 function TfFormGetCustom.QueryCustom(const nType: Byte): Boolean;
-var nStr,nWhere: string;
+var
+  nStr,nWhere,nCompanyID,nSaleID,nXSQYMC: string;
 begin
   Result := False;
   FStatus:=True;
   nWhere := '';
   ListCustom.Items.Clear;
 
-  if nType = 10 then
-  begin
-    nWhere := 'C_PY Like ''%$ID%'' or C_Name Like ''%$ID%'' or C_ID=''$ID''';
-  end else
-
-  if nType = 20 then
-  begin
-    if (EditCustom.ItemIndex < 1) then Exit;
-    //无查询条件
-
-    if EditCustom.ItemIndex > 0 then
-      nWhere := nWhere + 'C_ID=''$CID''';
-  end;
-
-  nStr := 'Select cus.* From $Cus cus ' ;
+  nWhere := '(Z_OrgAccountNum Like ''%$ID%'') or (Z_OrgAccountName Like ''%$ID%'')';
+  nStr := 'Select zk.*,zdt.D_StockName,zdt.D_Type From $ZK zk,$ZDT zdt ' ;
   if nWhere <> '' then
     nStr := nStr + ' Where (' + nWhere + ')';
-  nStr := nStr + ' Order By C_PY';
-
-  nStr := MacroValue(nStr, [MI('$Cus', sTable_Customer),
-          MI('$CID', GetCtrlData(EditCustom)), MI('$ID', EditCus.Text)]);
+  nStr := nStr + ' And Z_ID=D_ZID '+
+          'And ((Z_SalesStatus=''1'') or '+
+          '((Z_SalesType=''0'') and '+
+          '((Z_SalesStatus=''0'') or '+
+          '(Z_SalesStatus=''1'')))) '+
+          'And D_Blocked=''0'' '+
+          'Order By Z_ID';
+  nStr := MacroValue(nStr, [MI('$ZK', sTable_ZhiKa),MI('$ZDT', sTable_ZhiKaDtl),MI('$ID', EditCus.Text)]);
   //xxxxx
 
   with FDM.QueryTemp(nStr) do
@@ -181,10 +175,24 @@ begin
     while not Eof do
     with ListCustom.Items.Add do
     begin
-      Caption := FieldByName('C_ID').AsString;
-      SubItems.Add(FieldByName('C_Name').AsString);
-      SubItems.Add('-');
-      SubItems.Add('*');
+      Caption := FieldByName('Z_OrgAccountNum').AsString;
+      SubItems.Add(FieldByName('Z_OrgAccountName').AsString);
+      SubItems.Add(FieldByName('Z_ID').AsString);
+      if FieldByName('Z_TriangleTrade').AsString='1' then
+      begin
+        nSaleID:= FieldByName('Z_IntComOriSalesId').AsString;
+        nCompanyID:= FieldByName('Z_CompanyId').AsString;
+        nXSQYMC:=GetCompanyArea(nSaleID,nCompanyID);
+        if nXSQYMC= 'Fail' then
+        begin
+          ShowMsg(FieldByName('Z_OrgAccountName').AsString+#13#10+'获取销售区域失败',sHint);
+          Exit;
+        end else
+          SubItems.Add(nXSQYMC);
+      end else
+        SubItems.Add('-');
+      SubItems.Add(FieldByName('D_StockName').AsString);
+      SubItems.Add(FieldByName('D_Type').AsString);
       ImageIndex := cItemIconIndex;
       Next;
     end;
@@ -193,34 +201,8 @@ begin
     Result := True;
   end else
   begin
-    if FModel='Y' then
-    begin
-      nStr := 'Select * From $ZK zk Where ((Z_Customer Like ''%$ID%'') or (Z_Name Like ''%$ID%'')) ';
-      nStr := MacroValue(nStr, [MI('$ZK', sTable_ZhiKa), MI('$ID', EditCus.Text)]);
-      with FDM.QueryTemp(nStr) do
-      if RecordCount > 0 then
-      begin
-        FStatus:=False;
-        First;
-        while not Eof do
-        with ListCustom.Items.Add do
-        begin
-          Caption := FieldByName('Z_Customer').AsString;
-          SubItems.Add(FieldByName('Z_Name').AsString);
-          if FieldByName('Z_TriangleTrade').AsString='1' then
-            SubItems.Add(FieldByName('Z_CompanyId').AsString)
-          else
-            SubItems.Add(FieldByName('DataAreaID').AsString);
-          SubItems.Add(FieldByName('Z_CID').AsString);
-
-          ImageIndex := cItemIconIndex;
-          Next;
-        end;
-
-        ListCustom.ItemIndex := 0;
-        Result := True;
-      end;
-    end;
+    ShowMsg('无可用订单',sHint);
+    Exit;
   end;
 end;
 
@@ -245,8 +227,9 @@ begin
   begin
     FCusID := Caption;
     FCusName := SubItems[0];
-    FDataAreaID := SubItems[1];
-    FContractID := SubItems[2];
+    FSaleID := SubItems[1];
+    FXSQYMC := SubItems[2];
+    if FXSQYMC <> '' then SaveCompanyArea(FXSQYMC,FSaleID);
   end;
 end;
 
@@ -260,28 +243,6 @@ begin
     if ListCustom.ItemIndex > -1 then
     begin
       GetResult;
-      if (FModel='Y') and (not FStatus) then
-      begin
-        if SyncRemoteCustomer(FCusID,FDataAreaID) then
-        begin
-          nMsg:='客户['+FCusName+']信息下载成功！';
-          ShowMsg(nMsg,sHint);
-          if GetAXSalesContract(FContractID,FDataAreaID) then
-          begin
-            nMsg:='['+FContractID+']合同信息下载成功！';
-            ShowMsg(nMsg,sHint);
-          end else
-          begin
-            nMsg:='['+FContractID+']合同信息下载失败！';
-            ShowMsg(nMsg,sHint);
-          end;
-        end else
-        begin
-          nMsg:='客户['+FCusName+']信息下载失败！';
-          ShowMsg(nMsg,sHint);
-          Exit;
-        end;
-      end;
       ModalResult := mrOk;
     end;
   end;
@@ -293,28 +254,6 @@ begin
   if ListCustom.ItemIndex > -1 then
   begin
     GetResult;
-    if (FModel='Y') and (not FStatus) then
-    begin
-      if SyncRemoteCustomer(FCusID,FDataAreaID) then
-      begin
-        nMsg:='客户['+FCusName+']信息下载成功！';
-        ShowMsg(nMsg,sHint);
-        if GetAXSalesContract(FContractID,FDataAreaID) then
-        begin
-          nMsg:='['+FContractID+']合同信息下载成功！';
-          ShowMsg(nMsg,sHint);
-        end else
-        begin
-          nMsg:='['+FContractID+']合同信息下载失败！';
-          ShowMsg(nMsg,sHint);
-        end;
-      end else
-      begin
-        nMsg:='客户['+FCusName+']信息下载失败！';
-        ShowMsg(nMsg,sHint);
-        Exit;
-      end;
-    end;
     ModalResult := mrOk;
   end;
 end;
@@ -325,28 +264,6 @@ begin
   if ListCustom.ItemIndex > -1 then
   begin
     GetResult;
-    if (FModel='Y') and (not FStatus) then
-    begin
-      if SyncRemoteCustomer(FCusID,FDataAreaID) then
-      begin
-        nMsg:='客户['+FCusName+']信息下载成功！';
-        ShowMsg(nMsg,sHint);
-        if GetAXSalesContract(FContractID,FDataAreaID) then
-        begin
-          nMsg:='['+FContractID+']合同信息下载成功！';
-          ShowMsg(nMsg,sHint);
-        end else
-        begin
-          nMsg:='['+FContractID+']合同信息下载失败！';
-          ShowMsg(nMsg,sHint);
-        end;
-      end else
-      begin
-        nMsg:='客户['+FCusName+']信息下载失败！';
-        ShowMsg(nMsg,sHint);
-        Exit;
-      end;
-    end;
     ModalResult := mrOk;
   end else ShowMsg('请在查询结果中选择', sHint);
 end;

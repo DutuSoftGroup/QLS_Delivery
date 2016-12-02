@@ -86,7 +86,8 @@ begin
   try
     Caption := '—°‘Ò÷Ωø®';
     InitFormData('');
-    FShowPrice := gPopedomManager.HasPopedom(nPopedom, sPopedom_ViewPrice);
+    //FShowPrice := gPopedomManager.HasPopedom(nPopedom, sPopedom_ViewPrice);
+    if gSysParam.FIsAdmin then FShowPrice:= True else FShowPrice:=False;
     
     gParam.FCommand := cCmd_ModalResult;
     gParam.FParamA := ShowModal;
@@ -150,7 +151,7 @@ begin
 
   with nDS do
   begin
-    nCusName := FieldByName('C_Name').AsString;
+    nCusName := FieldByName('Z_OrgAccountName').AsString;
   end;
 
   EditID.Text := nID;
@@ -163,10 +164,11 @@ begin
 
   SetCtrlData(EditName, nID);
   //customer info done
-  if FQueryFlag then Exit;
+  //if FQueryFlag then Exit;
   //----------------------------------------------------------------------------
-  nStr := 'Z_ID=Select Z_ID, Z_Name From %s ' +
-          'Where Z_Customer=''%s'' '+
+  if EditZK.Text <> '' then Exit;
+  nStr := 'Z_ID=Select Z_ID, Z_OrgAccountName From %s ' +
+          'Where Z_OrgAccountNum=''%s'' '+
           'And ((Z_SalesStatus=''1'') or '+
           '((Z_SalesType=''0'') and '+
           '((Z_SalesStatus=''0'') or '+
@@ -224,7 +226,11 @@ begin
   nStr := Format(nStr, [sTable_ZhiKaDtl, GetCtrlData(EditZK)]);
   with FDM.QueryTemp(nStr) do
   begin
-    if RecordCount < 1 then Exit;
+    if RecordCount < 1 then
+    begin
+      ShowMsg(GetCtrlData(EditZK)+'∂©µ•“—Õ£÷π',sHint);
+      Exit;
+    end;
     nIdx:=0;
     SetLength(gStockList, RecordCount);
     First;
@@ -255,10 +261,16 @@ begin
     begin
       Checked := False;
       Caption := gStockList[i].FStockName;
-      if LoadAddTreaty(gStockList[i].FRecID,nNewPrice) then
-        SubItems.Add(Format('%.2f',[nNewPrice]))
-      else
-        SubItems.Add(gStockList[i].FPrice);
+      if FShowPrice then
+      begin
+        if LoadAddTreaty(gStockList[i].FRecID,nNewPrice) then
+          SubItems.Add(Format('%.2f',[nNewPrice]))
+        else
+          SubItems.Add(gStockList[i].FPrice);
+      end else
+      begin
+        SubItems.Add('---');
+      end;
       SubItems.Add(gStockList[i].FValue);
     end;
   end;
@@ -282,13 +294,14 @@ begin
     if (nP.FCommand <> cCmd_ModalResult) or (nP.FParamA <> mrOK) then Exit;
 
     SetCtrlData(EditName, nP.FParamB);
-
+    SetCtrlData(EditZK, nP.FParamD);
     if EditName.ItemIndex < 0 then
     begin
       nStr := Format('%s=%s.%s', [nP.FParamB, nP.FParamB, nP.FParamC]);
       InsertStringsItem(EditName.Properties.Items, nStr);
       SetCtrlData(EditName, nP.FParamB);
     end;
+    if EditZK.Text <> '' then EditZK.SetFocus;
   end;
 end;
 
@@ -323,7 +336,7 @@ begin
   begin
     EditZK.Properties.Items.Clear;
     EditZK.Text:=Trim(EditZK.Text);
-    nStr := 'Z_ID=Select Z_ID, Z_Name From $ZK zk '+
+    nStr := 'Z_ID=Select Z_ID, Z_OrgAccountName From $ZK zk '+
             'Where Z_ID Like ''%$ID%'' '+
             'And ((Z_SalesStatus=''1'') or '+
             '((Z_SalesType=''0'') and '+

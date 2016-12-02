@@ -1,5 +1,4 @@
 inherited fFormAXBaseLoad: TfFormAXBaseLoad
-  Left = 491
   Top = 287
   Caption = 'AX'#22522#30784#34920#25968#25454#19979#36733
   ClientHeight = 321
@@ -240,6 +239,17 @@ inherited fFormAXBaseLoad: TfFormAXBaseLoad
     Style.BorderStyle = ebsSingle
     Style.HotTrack = False
     TabOrder = 18
+    Width = 123
+  end
+  object chkKuWei: TcxCheckBox
+    Left = 151
+    Top = 244
+    Caption = ' '#24211#20301#20449#24687
+    ParentFont = False
+    Style.BorderColor = clWindowFrame
+    Style.BorderStyle = ebsSingle
+    Style.HotTrack = False
+    TabOrder = 19
     Width = 123
   end
 end

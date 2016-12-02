@@ -57,6 +57,12 @@ const
   cBC_DeleteOrderBase         = $0047;   //删除采购申请单
   cBC_GetGYOrderValue         = $0048;   //获取已收货量
 
+  cBC_SaveDDCard              = $0047;
+  cBC_LogOffDDCard            = $0048;
+  cBC_GetPostDDs              = $0049;   //获取岗位采购单
+  cBC_SavePostDDs             = $0050;   //保存岗位采购单
+  cBC_AXSyncDuanDao           = $0051;   //同步短倒
+
   cBC_GetPostBills            = $0030;   //获取岗位交货单
   cBC_SavePostBills           = $0031;   //保存岗位交货单
 
@@ -117,6 +123,10 @@ const
   cBC_GetAXMaCredLmt          = $0114;   //是否强制信用额度
   cBC_GetAXContQuota          = $0115;   //是否专款专用
   cBC_GetCustNo               = $0116;   //获取最终客户
+  cBC_GetAXCompanyArea        = $0117;   //在线获取销售区域
+  cBC_GetAXInVentSum          = $0118;   //在线获取生产线余量
+  cBC_SyncAXwmsLocation       = $0119;   //同步库位信息到DL
+
 type
   PWorkerQueryFieldData = ^TWorkerQueryFieldData;
   TWorkerQueryFieldData = record
@@ -174,6 +184,11 @@ type
     FCenterID   : string;          //生产线ID
     FLocationID : string;          //仓库ID
     FSalesType  : string;          //订单类型
+    FRecID      : string;          //订单行编码
+    FKw         : string;          //库位
+    FWorkOrder  : string;          //班别
+    FTriaTrade  : string;          //三角贸易
+    FNeiDao     : string;          //内倒
   end;
 
   TLadingBillItems = array of TLadingBillItem;
@@ -206,6 +221,7 @@ resourcestring
   sBus_HardwareCommand        = 'Bus_HardwareCommand';  //硬件指令
   sBus_BusinessPurchaseOrder  = 'Bus_BusinessPurchaseOrder'; //采购单相关
   sBus_BusinessRegWeiXin      = 'Bus_BusinessRegWeiXin'; //微信注册相关
+  sBus_BusinessDuanDao        = 'Bus_BusinessDuanDao';  //短倒业务相关
 
   {*client function name*}
   sCLI_ServiceStatus          = 'CLI_ServiceStatus';    //服务状态
@@ -217,6 +233,7 @@ resourcestring
   sCLI_BusinessPurchaseOrder  = 'CLI_BusinessPurchaseOrder'; //采购单相关
   sCLI_BusinessRegWeiXin      = 'CLI_BusinessRegWeiXin';  //微信注册
   sCLI_BusinessBindUserWeiXin = 'CLI_BusinessBindUserWeiXin'; //工厂绑定用户（微信）
+  sCLI_BusinessDuanDao        = 'CLI_BusinessDuanDao';  //短倒业务相关
 
 implementation
 
@@ -309,6 +326,11 @@ begin
         FCenterID := Values['CenterID'];          //生产线ID
         FLocationID:= Values['LocationID'];       //仓库ID
         FSalesType:= Values['SalesType'];         //订单类型
+        FRecID    := Values['RecID'];             //订单行编码
+        FKw       := Values['KuWei'];             //库位
+        FWorkOrder:= Values['WorkOrder'];         //班别
+        FTriaTrade:= Values['TriaTrade'];         //三角贸易
+        FNeiDao   := Values['NeiDao'];            //内倒
       end;
 
       Inc(nInt);
@@ -391,6 +413,11 @@ begin
         Values['CenterID']   := FCenterID;          //生产线ID
         Values['LocationID'] := FLocationID;        //仓库ID
         Values['SalesType']  := FSalesType;         //订单类型
+        Values['RecID']      := FRecID;             //订单行编码
+        Values['KuWei']      := FKw;                //库位
+        Values['WorkOrder']  := FWorkOrder;         //班别
+        Values['TriaTrade']  := FTriaTrade;         //三角贸易
+        Values['NeiDao']     := FNeiDao;              //内倒
       end;
 
       nListA.Add(PackerEncodeStr(nListB.Text));

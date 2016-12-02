@@ -1,24 +1,24 @@
 inherited fFormGetZhiKa: TfFormGetZhiKa
-  Left = 621
-  Top = 219
+  Left = 321
+  Top = 195
   ClientHeight = 440
-  ClientWidth = 443
+  ClientWidth = 495
   Position = poDesktopCenter
   OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
-    Width = 443
+    Width = 495
     Height = 440
     inherited BtnOK: TButton
-      Left = 297
+      Left = 349
       Top = 407
       Caption = #30830#23450
       TabOrder = 5
     end
     inherited BtnExit: TButton
-      Left = 367
+      Left = 419
       Top = 407
       TabOrder = 6
     end

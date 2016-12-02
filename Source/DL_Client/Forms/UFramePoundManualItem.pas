@@ -815,7 +815,7 @@ function TfFrameManualPoundItem.SavePoundSale: Boolean;
 var nStr: string;
     nVal,nNet: Double;
     nFoutData: string;
-    nSQL: string;
+    nSQL,nPrePUse: string;
 begin
   Result := False;
   //init
@@ -829,7 +829,7 @@ begin
     end;
     if FBillItems[0].FType = sFlag_San then
     begin
-      nNet := GetTruckEmptyValue(FUIData.FTruck);
+      nNet := GetTruckEmptyValue(FUIData.FTruck,nPrePUse);
       nVal := nNet * 1000 - FUIData.FPData.FValue * 1000;
 
       if (nNet > 0) and (Abs(nVal) > gSysParam.FPoundSanF) then

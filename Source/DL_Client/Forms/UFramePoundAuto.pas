@@ -237,11 +237,9 @@ begin
     begin
       nT := Tunnels[nIdx];
       //tunnel
-
+      
       with TfFrameAutoPoundItem.Create(Self) do
       begin
-        SetOutWeightEvent(nT.FID, PoundOutWeight);
-
         Name := 'fFrameAutoPoundItem' + IntToStr(nIdx);
         Parent := WorkPanel;
 

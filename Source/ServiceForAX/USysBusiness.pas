@@ -88,7 +88,7 @@ var nStr: string;
     nIdx: Integer;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nSalesId,nRecid,nDataAreaID:string;
+    nSalesId,nRecid,nDataAreaID,nInnerOrderQY,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -101,19 +101,29 @@ begin
       Exit;
     end;
     try
-      nSalesId:= nNode.NodeByName('SalesId').ValueAsString;
+      nSalesId:= nNode.NodeByName('SalesId').ValueAsString;   //¶©µ¥ID
     except
       nSalesId:= '';
     end;
     try
-      nRecid:= nNode.NodeByName('Recid').ValueAsString;
+      nRecid:= nNode.NodeByName('Recid').ValueAsString;       //ÐÐID
     except
       nRecid:= '';
     end;
     try
-      nDataAreaID:= nNode.NodeByName('DataAreaID').ValueAsString;
+      nDataAreaID:= nNode.NodeByName('DataAreaID').ValueAsString; //ÕËÌ×
     except
       nDataAreaID:='';
+    end;
+    try
+      nInnerOrderQY:= nNode.NodeByName('innerOrderQY').ValueAsString; //×îÖÕÏúÊÛÇøÓò
+    except
+      nInnerOrderQY:='';
+    end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
     end;
   finally
     nXML.Free;
@@ -123,14 +133,21 @@ begin
     Result:=False;
     Exit;
   end;
+  if nOperation='D' then
+  begin
+    Result:=True;
+    Exit;
+  end;
   with DM do
   begin
     FListA:=TStringList.Create;
     try
       FListA.Clear;
       try
-        nStr := 'Select * From %s Where SalesId=''%s'' and DataAreaID=''%s'' and Recid=''%s'' ';
-        nStr := Format(nStr, [sTable_AX_Sales, nSalesId, nDataAreaID, nRecid]);
+        //nStr := 'Select * From %s Where SalesId=''%s'' and DataAreaID=''%s'' and Recid=''%s'' ';
+        //nStr := Format(nStr, [sTable_AX_Sales, nSalesId, nDataAreaID, nRecid]);
+        nStr := 'Select * From %s Where Recid=''%s'' ';
+        nStr := Format(nStr, [sTable_AX_Sales, nRecid]);
         with qryRem do
         begin
           WriteLog(nStr);
@@ -141,7 +158,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄÏúÊÛ¶©µ¥²»´æÔÚ.';
             nStr := Format(nStr, [nSalesId]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -192,6 +209,7 @@ begin
                   ''',Z_KHSBM='''+Values['Z_KHSBM']+
                   ''',Z_Lading='''+Values['Z_Lading']+
                   ''',Z_CompanyId='''+Values['Z_CompanyId']+
+                  ''',Z_OrgXSQYBM='''+nInnerOrderQY+
                   ''' where Z_ID=''%s'' and DataAreaID=''%s'' ';
             nStr := Format(nStr, [sTable_ZhiKa, nSalesId, nDataAreaID]);
           end else
@@ -199,16 +217,16 @@ begin
             nStr:= 'Insert into %s (Z_ID,Z_Name,Z_CID,Z_Customer,Z_ValidDays,'+
                    'Z_SalesStatus,Z_SalesType,Z_TriangleTrade,Z_OrgAccountNum,'+
                    'Z_OrgAccountName,Z_IntComOriSalesId,Z_Date,Z_Lading,Z_CompanyId,'+
-                   'Z_XSQYBM,Z_KHSBM,DataAreaID) '+
+                   'Z_XSQYBM,Z_KHSBM,Z_OrgXSQYBM,DataAreaID) '+
                    'values ('''+Values['Z_ID']+''','''+Values['Z_Name']+''','''+
                    Values['Z_CID']+''','''+Values['Z_Customer']+''','''+
                    Values['Z_ValidDays']+''','''+Values['Z_SalesStatus']+''','''+
                    Values['Z_SalesType']+''','''+Values['Z_TriangleTrade']+''','''+
                    Values['Z_OrgAccountNum']+''','''+Values['Z_OrgAccountName']+''','''+
-                   Values['Z_IntComOriSalesId']+''','''+
-                   Values['Z_Date']+''','''+Values['Z_Lading']+''','''+
-                   Values['Z_CompanyId']+''','''+Values['Z_XSQYBM']+''','''+
-                   Values['Z_KHSBM']+''','''+nDataAreaID+''')';
+                   Values['Z_IntComOriSalesId']+''','''+Values['Z_Date']+''','''+
+                   Values['Z_Lading']+''','''+Values['Z_CompanyId']+''','''+
+                   Values['Z_XSQYBM']+''','''+Values['Z_KHSBM']+''','''+
+                   nInnerOrderQY+''','''+nDataAreaID+''')';
             nStr := Format(nStr, [sTable_ZhiKa]);
           end;
           WriteLog(nStr);
@@ -217,17 +235,6 @@ begin
           ExecSQL;
           Result:=True;
         end;
-        {if FListA.Values['Z_TriangleTrade']='1' then
-        begin
-          if LoadAXCustomer(FListA.Values['Z_OrgAccountNum'],FListA.Values['Z_CompanyId']) then
-            WriteLog(FListA.Values['Z_OrgAccountNum']+'¿Í»§ÐÅÏ¢ÏÂÔØ³É¹¦')
-          else
-            WriteLog(FListA.Values['Z_OrgAccountNum']+'¿Í»§ÐÅÏ¢ÏÂÔØÊ§°Ü');
-          if LoadAXSalesContract(FListA.Values['Z_CID'],nDataAreaID) then
-            WriteLog(FListA.Values['Z_CID']+'ÏúÊÛºÏÍ¬ÏÂÔØ³É¹¦')
-          else
-            WriteLog(FListA.Values['Z_CID']+'ÏúÊÛºÏÍ¬ÏÂÔØÊ§°Ü');
-        end;}
       except
         on e:Exception do
         begin
@@ -245,7 +252,7 @@ var nStr: string;
     nIdx: Integer;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nSalesId,nDataAreaID,nRecid:string;
+    nSalesId,nDataAreaID,nRecid,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -272,12 +279,22 @@ begin
     except
       nRecid:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
-  if (nSalesId='') or (nDataAreaID='') or (nRecid='') then
+  if (nSalesId='') or (nDataAreaID='') or (nRecid='')  then
   begin
     Result:=False;
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -286,8 +303,10 @@ begin
     try
       FListA.Clear;
       try
-        nStr := 'Select * From %s Where SalesId=''%s'' and DataAreaID=''%s'' and Recid=''%s'' ';
-        nStr := Format(nStr, [sTable_AX_SalLine, nSalesId, nDataAreaID, nRecid]);
+        //nStr := 'Select * From %s Where SalesId=''%s'' and DataAreaID=''%s'' and Recid=''%s'' ';
+        //nStr := Format(nStr, [sTable_AX_SalLine, nSalesId, nDataAreaID, nRecid]);
+        nStr := 'Select * From %s Where Recid=''%s'' ';
+        nStr := Format(nStr, [sTable_AX_SalLine, nRecid]);
         with qryRem do
         begin
           WriteLog(nStr);
@@ -298,7 +317,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄÏúÊÛ¶©µ¥ÐÐ²»´æÔÚ.';
             nStr := Format(nStr, [nSalesId]);
-            Result := False;
+            Result := True;
             Exit;
           end;
           with FListA do
@@ -370,7 +389,7 @@ function GetAXSupAgreement(const XMLPrimaryKey: Widestring): Boolean;//»ñÈ¡²¹³äÐ
 var nStr: string;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nXTEadjustBillNum,nRefRecid,nDataAreaID,nRecId:string;
+    nXTEadjustBillNum,nRefRecid,nDataAreaID,nRecId,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -402,13 +421,24 @@ begin
     except
       nRecId:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
-  if (nXTEadjustBillNum='') or (nRefRecid='') or (nDataAreaID='') or (nRecId='') then
+  //if (nXTEadjustBillNum='') or (nRefRecid='') or (nDataAreaID='') or (nRecId='') then
+  if nRecid='' then
   begin
     WriteLog(nXTEadjustBillNum+'|'+nRefRecid+'|'+nDataAreaID+'|'+nRecId);
     Result:=False;
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -417,8 +447,10 @@ begin
     try
       FListA.Clear;
       try
-        nStr := 'Select * From %s Where XTEadjustBillNum=''%s'' and RefRecid=''%s'' and DataAreaID=''%s'' and RecId=''%s'' ';
-        nStr := Format(nStr, [sTable_AX_SupAgre, nXTEadjustBillNum, nRefRecid, nDataAreaID, nRecId]);
+        //nStr := 'Select * From %s Where XTEadjustBillNum=''%s'' and RefRecid=''%s'' and DataAreaID=''%s'' and RecId=''%s'' ';
+        //nStr := Format(nStr, [sTable_AX_SupAgre, nXTEadjustBillNum, nRefRecid, nDataAreaID, nRecId]);
+        nStr := 'Select * From %s Where RecId=''%s'' ';
+        nStr := Format(nStr, [sTable_AX_SupAgre, nRecId]);
         with qryRem do
         begin
           WriteLog(nStr);
@@ -429,7 +461,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄ²¹³äÐ­Òé²»´æÔÚ.';
             nStr := Format(nStr, [nXTEadjustBillNum]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -493,7 +525,7 @@ function GetAXCreLimCust(const XMLPrimaryKey: Widestring): Boolean;//»ñÈ¡ÐÅÓÃ¶î¶
 var nStr: string;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nCustAcc,nDataAreaID,nRecId:string;
+    nCustAcc,nDataAreaID,nRecId,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -520,6 +552,11 @@ begin
     except
       nRecId:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
@@ -528,14 +565,21 @@ begin
     Result:=False;
     Exit;
   end;
+  if nOperation='D' then
+  begin
+    Result:=True;
+    Exit;
+  end;
   with DM do
   begin
     FListA:=TStringList.Create;
     try
       FListA.Clear;
       try
-        nStr := 'Select * From %s Where CustAccount=''%s'' and DataAreaID=''%s'' and RecId=''%s'' ';
-        nStr := Format(nStr, [sTable_AX_CreLimLog, nCustAcc, nDataAreaID, nRecId]);
+        //nStr := 'Select * From %s Where CustAccount=''%s'' and DataAreaID=''%s'' and RecId=''%s'' ';
+        //nStr := Format(nStr, [sTable_AX_CreLimLog, nCustAcc, nDataAreaID, nRecId]);
+        nStr := 'Select * From %s Where RecId=''%s'' ';
+        nStr := Format(nStr, [sTable_AX_CreLimLog, nRecId]);
         with qryRem do
         begin
           WriteLog(nStr);
@@ -546,7 +590,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄÐÅÓÃ¶î¶ÈÔö¼õ¼ÇÂ¼²»´æÔÚ.';
             nStr := Format(nStr, [nCustAcc]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -567,8 +611,10 @@ begin
         end;
         with qryLoc,FListA do
         begin
-          nStr:='select * from %s where C_CusID=''%s'' and DataAreaID=''%s'' and RecID=''%s'' ';
-          nStr := Format(nStr, [sTable_CustPresLog, nCustAcc, nDataAreaID, nRecId]);
+          //nStr:='select * from %s where C_CusID=''%s'' and DataAreaID=''%s'' and RecID=''%s'' ';
+          //nStr := Format(nStr, [sTable_CustPresLog, nCustAcc, nDataAreaID, nRecId]);
+          nStr:='select * from %s where RecID=''%s'' ';
+          nStr := Format(nStr, [sTable_CustPresLog, nRecId]);
           Close;
           SQL.Text:=nStr;
           Open;
@@ -591,8 +637,12 @@ begin
             SQL.Text:=nStr;
             ExecSQL;
           end;
-          Result:=True;
-          if GetAXTPRESTIGEMANAGE(nCustAcc, nDataAreaID) then  WriteLog('['+nCustAcc+']ÔÚÏß»ñÈ¡ÐÅÓÃ¶î¶È£¨¿Í»§£©³É¹¦');
+          //if GetAXTPRESTIGEMANAGE(nCustAcc, nDataAreaID) then  WriteLog('['+nCustAcc+']ÔÚÏß»ñÈ¡ÐÅÓÃ¶î¶È£¨¿Í»§£©³É¹¦');
+          if CalCreLimCust(nCustAcc, nDataAreaID, nRecId) then
+          begin
+            Result:=True;
+            WriteLog('['+nCustAcc+']¼ÆËãÐÅÓÃ¶î¶È£¨¿Í»§£©³É¹¦');
+          end;
         end;
       except
         on e:Exception do
@@ -704,10 +754,9 @@ end;
 
 
 function CalCreLimCust(const nCustAcc, nDataAreaID, nRecId: string): Boolean;//¼ÆËãÐÅÓÃ¶î¶È£¨¿Í»§£©
-var nStr: string;
+var nStr,nLID: string;
     FListA: TStrings;
-    nAXYKMouney: Double;
-    nRID:Integer;
+    nAXYKMouney,nYKMouney: Double;
 begin
   FListA:=TStringList.Create;
   try
@@ -742,7 +791,6 @@ begin
             Open;
             if RecordCount>0 then
             begin
-              //nRID:=FieldByName('R_ID').AsInteger;
               nStr:='update %s set C_CashBalance=C_CashBalance+(%s),'+
                     'C_BillBalance3M=C_BillBalance3M+(%s),'+
                     'C_BillBalance6M=C_BillBalance6M+(%s),'+
@@ -774,12 +822,23 @@ begin
             nAXYKMouney:= StrToFloat(Values['C_YKAmount']);
             if nAXYKMouney < 0 then
             begin
-              nStr:='Update %s Set A_FreezeMoney=A_FreezeMoney+(%s) Where A_CID=''%s''';
-              nStr:= Format(nStr, [sTable_CusAccount, FloatToStr(nAXYKMouney), nCustAcc]);
+              nLID:='T'+Values['C_TransPlanID'];
+              nStr:='select L_Value*L_Price as L_TotalMoney from %s where L_ID=''%s'' ';
+              nStr := Format(nStr, [sTable_Bill, nLID]);
               WriteLog(nStr);
               Close;
               SQL.Text:=nStr;
-              ExecSQL;
+              Open;
+              if RecordCount > 0 then
+              begin
+                nYKMouney:=FieldByName('L_TotalMoney').AsFloat;
+                nStr:='Update %s Set A_FreezeMoney=A_FreezeMoney-(%s) Where A_CID=''%s''';
+                nStr:= Format(nStr, [sTable_CusAccount, FormatFloat('0.00',nYKMouney), nCustAcc]);
+                WriteLog(nStr);
+                Close;
+                SQL.Text:=nStr;
+                ExecSQL;
+              end;
             end;
           end;
           Result:=True;
@@ -800,7 +859,7 @@ function GetAXCreLimCusCont(const XMLPrimaryKey: Widestring): Boolean;//»ñÈ¡ÐÅÓÃ
 var nStr: string;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nCustAcc,nDataAreaID,nContractId,nRecId:string;
+    nCustAcc,nDataAreaID,nContractId,nRecId,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -818,7 +877,11 @@ begin
       nCustAcc:= '';
     end;
     try
-      nDataAreaID:= nNode.NodeByName('DataAreaID').ValueAsString;
+      nTmp:= nNode.NodeByName('DataAreaID');
+      if Assigned(nTmp) then
+        nDataAreaID:= nTmp.ValueAsString
+      else
+        nDataAreaID:= nNode.NodeByName('companyid').ValueAsString;
     except
       nDataAreaID:='';
     end;
@@ -832,12 +895,22 @@ begin
     except
       nRecId:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
   if (nCustAcc='') or (nDataAreaID='') or (nContractId='') or (nRecId='') then
   begin
     Result:=False;
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -858,7 +931,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄÐÅÓÃ¶î¶ÈÔö¼õ¼ÇÂ¼(ºÏÍ¬)²»´æÔÚ.';
             nStr := Format(nStr, [nCustAcc]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -905,9 +978,13 @@ begin
             SQL.Text:=nStr;
             ExecSQL;
           end;
-          Result:=True;
-          if GetAXTPRESTIGEMBYCONT(nCustAcc, nDataAreaID, nContractId) then
-            WriteLog('['+nCustAcc+','+nContractId+']ÔÚÏß»ñÈ¡ÐÅÓÃ¶î¶È£¨¿Í»§-ºÏÍ¬£©³É¹¦');
+          {if GetAXTPRESTIGEMBYCONT(nCustAcc, nDataAreaID, nContractId) then
+            WriteLog('['+nCustAcc+','+nContractId+']ÔÚÏß»ñÈ¡ÐÅÓÃ¶î¶È£¨¿Í»§-ºÏÍ¬£©³É¹¦'); }
+          if CalCreLimCusCont(nCustAcc, nDataAreaID, nContractId, nRecId) then
+          begin
+            Result:=True;
+            WriteLog('['+nCustAcc+','+nContractId+']¼ÆËãÐÅÓÃ¶î¶È£¨¿Í»§-ºÏÍ¬£©³É¹¦');
+          end;
         end;
       except
         on e:Exception do
@@ -1020,10 +1097,9 @@ end;
 
 
 function CalCreLimCusCont(const nCustAcc, nDataAreaID, nContractId, nRecId :string): Boolean;//¼ÆËãÐÅÓÃ¶î¶È£¨¿Í»§-ºÏÍ¬£©
-var nStr: string;
+var nStr,nLID: string;
     FListA: TStrings;
-    nAXYKMouney: Double;
-    nRID:Integer;
+    nAXYKMouney,nYKMouney: Double;
 begin
   FListA:=TStringList.Create;
   try
@@ -1057,12 +1133,11 @@ begin
             Open;
             if RecordCount>0 then
             begin
-              //nRID:=FieldByName('R_ID').AsInteger;
               nStr:='update %s set C_CashBalance=C_CashBalance+(%s),'+
                     'C_BillBalance3M=C_BillBalance3M+(%s),'+
                     'C_BillBalance6M=C_BillBalance6M+(%s),'+
                     'C_TemporAmount=C_TemporAmount+(%s),'+
-                    'C_PrestigeQuota=C_PrestigeQuota+(%.12f),'+
+                    'C_PrestigeQuota=C_PrestigeQuota+(%s),'+
                     'C_Date=''%s'',C_Man=''%s'' '+
                     ' where C_CusID=''%s'' and C_ContractId=''%s'' and DataAreaID=''%s'' ';
               nStr:=Format(nStr, [sTable_CusContCredit, Values['C_SubCash'],
@@ -1090,12 +1165,23 @@ begin
             nAXYKMouney:= StrToFloat(Values['C_YKAmount']);
             if nAXYKMouney < 0 then
             begin
-              nStr:='Update %s Set A_ConFreezeMoney=A_ConFreezeMoney+(%s) Where A_CID=''%s''';
-              nStr:= Format(nStr, [sTable_CusAccount, FloatToStr(nAXYKMouney), nCustAcc]);
+              nLID:='T'+Values['C_TransPlanID'];
+              nStr:='select L_Value*L_Price as L_TotalMoney from %s where L_ID=''%s'' ';
+              nStr := Format(nStr, [sTable_Bill, nLID]);
               WriteLog(nStr);
               Close;
               SQL.Text:=nStr;
-              ExecSQL;
+              Open;
+              if RecordCount > 0 then
+              begin
+                nYKMouney:=FieldByName('L_TotalMoney').AsFloat;
+                nStr:='Update %s Set A_ConFreezeMoney=A_ConFreezeMoney-(%s) Where A_CID=''%s''';
+                nStr:= Format(nStr, [sTable_CusAccount, FormatFloat('0.00',nYKMouney), nCustAcc]);
+                WriteLog(nStr);
+                Close;
+                SQL.Text:=nStr;
+                ExecSQL;
+              end;
             end;
           end;
           Result:=True;
@@ -1116,7 +1202,7 @@ function GetAXSalesContract(const XMLPrimaryKey: Widestring): Boolean;//»ñÈ¡ÏúÊÛ
 var nStr: string;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nContactId,nDataAreaID,nRecid:string;
+    nContactId,nDataAreaID,nRecid,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -1143,12 +1229,22 @@ begin
     except
       nRecid:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
   if (nContactId='') or (nDataAreaID='') or (nRecid='') then
   begin
     Result:=False;
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -1169,7 +1265,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄÏúÊÛºÏÍ¬²»´æÔÚ.';
             nStr := Format(nStr, [nContactId]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -1235,7 +1331,7 @@ function GetAXSalesContLine(const XMLPrimaryKey: Widestring): Boolean;//»ñÈ¡ÏúÊÛ
 var nStr: string;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nContactId,nDataAreaID,nRecid:string;
+    nContactId,nDataAreaID,nRecid,nOperation:string;
     FListA:TStrings;
     nType: string;
 begin
@@ -1263,12 +1359,22 @@ begin
     except
       nRecid:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
   if (nContactId='') or (nDataAreaID='') or (nRecid='') then
   begin
     Result:=False;
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -1289,7 +1395,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄÏúÊÛºÏÍ¬ÐÐ²»´æÔÚ.';
             nStr := Format(nStr, [nContactId]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -1359,7 +1465,7 @@ function GetAXVehicleNo(const XMLPrimaryKey: Widestring): Boolean;//»ñÈ¡³µºÅ
 var nStr: string;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nVehId,nRecid,nDataAreaID:string;
+    nVehId,nRecid,nDataAreaID,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -1386,12 +1492,22 @@ begin
     except
       nDataAreaID:='';
     end; }
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
   if (nVehId='') or (nRecid='') then
   begin
     Result:=False;
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -1412,7 +1528,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄ³µÁ¾ÐÅÏ¢²»´æÔÚ.';
             nStr := Format(nStr, [nVehId]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -1476,7 +1592,7 @@ function GetAXPurOrder(const XMLPrimaryKey: Widestring): Boolean;//»ñÈ¡²É¹º¶©µ¥
 var nStr: string;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nPurchId,nDataAreaID,nRecid:string;
+    nPurchId,nDataAreaID,nRecid,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -1503,12 +1619,22 @@ begin
     except
       nRecid:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
   if (nPurchId='') or (nDataAreaID='') or (nRecid='') then
   begin
     Result:=False;
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -1529,7 +1655,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄ²É¹º¶©µ¥²»´æÔÚ.';
             nStr := Format(nStr, [nPurchId]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -1602,7 +1728,7 @@ var nStr: string;
     nIdx: Integer;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nPurchId,nDataAreaID,nRecid:string;
+    nPurchId,nDataAreaID,nRecid,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -1629,12 +1755,22 @@ begin
     except
       nRecid:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
   if (nPurchId='') or (nDataAreaID='') or (nRecid='') then
   begin
     Result:=False;
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -1655,7 +1791,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄ²É¹º¶©µ¥ÐÐ²»´æÔÚ.';
             nStr := Format(nStr, [nPurchId]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -1687,7 +1823,7 @@ begin
                   ''',B_StockName='''+Values['B_StockName']+
                   ''',B_BStatus='''+Values['B_BStatus']+
                   ''',B_Value='''+Values['B_Value']+
-                  ''',B_SentValue='''+Values['B_SentValue']+
+                  //''',B_SentValue='''+Values['B_SentValue']+
                   ''',B_RestValue='''+Values['B_RestValue']+
                   ''',B_Blocked='''+Values['B_Blocked']+
                   ''',B_Date='''+Values['B_Date']+
@@ -1728,7 +1864,7 @@ var nStr: string;
     nIdx: Integer;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nCustNum,nDataAreaID,nRecid:string;
+    nCustNum,nDataAreaID,nRecid,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -1755,12 +1891,22 @@ begin
     except
       nRecid:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
   if (nCustNum='') or (nDataAreaID='') or (nRecid='') then
   begin
     Result:=False;
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -1783,7 +1929,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄ¿Í»§ÐÅÏ¢²»´æÔÚ.';
             nStr := Format(nStr, [nCustNum]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -1871,7 +2017,7 @@ var nStr: string;
     nIdx: Integer;
     nXML: TNativeXml;
     nNode, nTmp: TXmlNode;
-    nItemId,nDataAreaID:string;
+    nItemId,nDataAreaID,nOperation:string;
     FListA:TStrings;
 begin
   nXML := TNativeXml.Create;
@@ -1893,6 +2039,11 @@ begin
     except
       nDataAreaID:='';
     end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //²Ù×÷ÀàÐÍ£ºi->ÐÂÔö u->¸üÐÂ d->É¾³ý
+    except
+      nOperation:='';
+    end;
   finally
     nXML.Free;
   end;
@@ -1900,6 +2051,11 @@ begin
   begin
     Result:=False;
     WriteLog(nItemId+'/'+nDataAreaID);
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
     Exit;
   end;
   with DM do
@@ -1920,7 +2076,7 @@ begin
           begin
             nStr := '±àºÅÎª[ %s ]µÄÎïÁÏÐÅÏ¢²»´æÔÚ.';
             nStr := Format(nStr, [nItemId]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;

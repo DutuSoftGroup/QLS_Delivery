@@ -93,6 +93,7 @@ ResourceString
   sFlag_Sale          = 'S';                         //销售
   sFlag_Returns       = 'R';                         //退货
   sFlag_Other         = 'O';                         //其它
+  sFlag_DuanDao       = 'D';                         //短倒(预制皮重,单次称重)
   
   sFlag_TiHuo         = 'T';                         //自提
   sFlag_SongH         = 'S';                         //送货
@@ -161,6 +162,9 @@ ResourceString
   sFlag_InvRequst     = 'R';                         //申请开出
   sFlag_InvDaily      = 'D';                         //日常开出
 
+  sFlag_DeductFix     = 'F';                         //固定值扣减
+  sFlag_DeductPer     = 'P';                         //百分比扣减
+
   sFlag_SysParam      = 'SysParam';                  //系统参数
   sFlag_EnableBakdb   = 'Uses_BackDB';               //备用库
   sFlag_ValidDate     = 'SysValidDate';              //有效期
@@ -180,6 +184,8 @@ ResourceString
   sFlag_PoundWuCha    = 'PoundWuCha';                //过磅误差分组
   sFlag_PoundIfDai    = 'PoundIFDai';                //袋装是否过磅
   sFlag_NFStock       = 'NoFaHuoStock';              //现场无需发货
+  sFlag_NFPurch       = 'NoFaHuoPurch';              //现场无需发货（原材料）
+  sFlag_PEmpTWuCha    = 'EmpTruckWuCha';             //空车出厂误差
 
   sFlag_CommonItem    = 'CommonItem';                //公共信息
   sFlag_CardItem      = 'CardItem';                  //磁卡信息项
@@ -228,6 +234,7 @@ ResourceString
   sFlag_Order         = 'Bus_Order';                 //采购单号
   sFlag_OrderDtl      = 'Bus_OrderDtl';              //采购单号
   sFlag_OrderBase     = 'Bus_OrderBase';             //采购申请单号
+  sFlag_Transfer      = 'Bus_Transfer';              //短倒单号
   sFlag_Hhcl          = 'HuYanHhcl';                 //混合材类
   sFlag_OnLineModel   = 'OnLineModel';               //在线模式
   sFlag_NoSampleID    = 'NoSampleID';                //无试样编号
@@ -279,6 +286,10 @@ ResourceString
   sTable_OrderBaseBak = 'P_OrderBaseBak';            //已删除采购申请订单
   sTable_OrderDtl     = 'P_OrderDtl';                //采购订单明细
   sTable_OrderDtlBak  = 'P_OrderDtlBak';             //采购订单明细
+  sTable_Deduct       = 'S_PoundDeduct';             //过磅暗扣
+
+  sTable_Transfer     = 'P_Transfer';                //短倒明细单
+  sTable_TransferBak  = 'P_TransferBak';             //短倒明细单
   
   sTable_CusAccount   = 'Sys_CustomerAccount';       //客户账户
   sTable_InOutMoney   = 'Sys_CustomerInOutMoney';    //资金明细
@@ -315,6 +326,9 @@ ResourceString
   sTable_PoundWucha      = 'Sys_PoundWuCha';         //称重误差参数表
   sTable_PoundDevia      = 'Sys_PoundDevia';         //称重误差值
   sTable_ZTWorkSet       = 'S_ZTWorkSet';            //班别设置表
+  sTable_InOutFatory     = 'L_InOutFactory';         //临时进厂出厂表
+  sTable_KuWei           = 'Sys_KuWei';              //库位设置表
+  sTable_CompanyArea     = 'Sys_CompanyArea';        //销售区域
 
 
   sTable_K3_SyncItem  = 'DL_SyncItem';               //数据同步项
@@ -331,6 +345,7 @@ ResourceString
   sTable_AX_TPRESTIGEMBYCONT  = 'XT_TPRESTIGEMANAGEBYCONTRACT';  //信用额度（客户-合同）
   STable_AX_EMPL      = 'EMPLTABLE';                 //员工信息表
   sTable_AX_InvCenGroup = 'xtTInventCenterItemGroup';//物料组生产线
+  sTable_AX_WMSLocation = 'WMSLocation';//库位信息表
   //----------------------------------------------------------------------------
   sTable_AX_Sales     = 'SALESTABLE';                //销售订单
   sTable_AX_SalLine   = 'SALESLINE';                 //销售订单行
@@ -342,17 +357,15 @@ ResourceString
   sTable_AX_VehicleNo = 'CMT_Vehicle';               //车辆信息
   sTable_AX_PurOrder  = 'purchtable';                //采购订单
   sTable_AX_PurOrdLine= 'Purchline';                 //采购订单行
+  sTable_AX_CompArea  = 'XT_COMPACTAREA';            //销售区域
+  sTable_AX_InventSum = 'XTInventSUM';               //生产线余量
 
-  {-----------------------------------------------------------------------------
-    数据库表字段过多，所以从ResourceString 转成 const string
-  -----------------------------------------------------------------------------}
-const
+
 
   {*新建表*}
   sSQL_NewSysDict = 'Create Table $Table(D_ID $Inc, D_Name varChar(15),' +
        'D_Desc varChar(30), D_Value varChar(50), D_Memo varChar(20),' +
-       'D_ParamA $Float, D_ParamB varChar(50), D_ParamC varChar(50),' +
-       'D_Index Integer Default 0)';
+       'D_ParamA $Float, D_ParamB varChar(50), D_Index Integer Default 0)';
   {-----------------------------------------------------------------------------
    系统字典: SysDict
    *.D_ID: 编号
@@ -362,7 +375,6 @@ const
    *.D_Memo: 相关信息
    *.D_ParamA: 浮点参数
    *.D_ParamB: 字符参数
-   *.D_ParamC: 字符参数
    *.D_Index: 显示索引
   -----------------------------------------------------------------------------}
   
@@ -494,13 +506,13 @@ const
   -----------------------------------------------------------------------------}
 
   sSQL_NewCustomer = 'Create Table $Table(R_ID $Inc, C_ID varChar(15), ' +
-       'C_Name varChar(255), C_PY varChar(80), C_Addr varChar(100), ' +
+       'C_Name varChar(80), C_PY varChar(80), C_Addr varChar(100), ' +
        'C_FaRen varChar(50), C_LiXiRen varChar(50), C_WeiXin varChar(15),' +
        'C_Phone varChar(15), C_Fax varChar(15), C_Tax varChar(32),' +
-       'C_Bank varChar(35), C_Account varChar(64), C_SaleMan varChar(15),' +
+       'C_Bank varChar(35), C_Account varChar(18), C_SaleMan varChar(15),' +
        'C_Param varChar(32), C_Memo varChar(50), C_XuNi Char(1),' +
        'C_Factory varChar(50), C_ToUser varChar(50), C_IsBind Char(1),'+
-       'C_CredMax $Float Default 0, C_MaCredLmt varChar(32),'+
+       'C_CredMax Decimal(15,5) Default 0,C_MaCredLmt varChar(32),'+
        'C_CelPhone varChar(32))';
   {-----------------------------------------------------------------------------
    客户信息表: Customer
@@ -531,13 +543,13 @@ const
   -----------------------------------------------------------------------------}
   
   sSQL_NewCusAccount = 'Create Table $Table(R_ID $Inc, A_CID varChar(15),' +
-       'A_Used Char(1), A_InMoney $Float Default 0,' +
-       'A_OutMoney $Float Default 0, A_DebtMoney $Float Default 0,' +
-       'A_Compensation $Float Default 0,' +
-       'A_FreezeMoney $Float Default 0,' +
-       'A_CreditLimit $Float Default 0, A_Date DateTime,'+
-       'A_ConFreezeMoney $Float Default 0,'+
-       'A_ConOutMoney $Float Default 0)';
+       'A_Used Char(1), A_InMoney Decimal(15,5) Default 0,' +
+       'A_OutMoney Decimal(15,5) Default 0, A_DebtMoney Decimal(15,5) Default 0,' +
+       'A_Compensation Decimal(15,5) Default 0,' +
+       'A_FreezeMoney Decimal(15,5) Default 0,' +
+       'A_CreditLimit Decimal(15,5) Default 0, A_Date DateTime,'+
+       'A_ConFreezeMoney Decimal(15,5) not null Default 0,'+
+       'A_ConOutMoney Decimal(15,5) not null Default 0)';
   {-----------------------------------------------------------------------------
    客户账户:CustomerAccount
    *.R_ID:记录编号
@@ -568,7 +580,7 @@ const
   sSQL_NewInOutMoney = 'Create Table $Table(R_ID $Inc, M_SaleMan varChar(15),' +
        'M_CusID varChar(15), M_CusName varChar(80), ' +
        'M_Type Char(1), M_Payment varChar(20),' +
-       'M_Money $Float, M_ZID varChar(15), M_Date DateTime,' +
+       'M_Money Decimal(15,5), M_ZID varChar(15), M_Date DateTime,' +
        'M_Man varChar(32), M_Memo varChar(200))';
   {-----------------------------------------------------------------------------
    出入金明细:CustomerInOutMoney
@@ -589,7 +601,7 @@ const
   -----------------------------------------------------------------------------}
 
   sSQL_NewSysShouJu = 'Create Table $Table(R_ID $Inc ,S_Code varChar(15),' +
-       'S_Sender varChar(100), S_Reason varChar(100), S_Money $Float Default 0,' +
+       'S_Sender varChar(100), S_Reason varChar(100), S_Money Decimal(15,5),' +
        'S_BigMoney varChar(50), S_Bank varChar(35), S_Man varChar(32),' +
        'S_Date DateTime, S_Memo varChar(50))';
   {-----------------------------------------------------------------------------
@@ -607,7 +619,7 @@ const
 
   sSQL_NewCusCredit = 'Create Table $Table(R_ID $Inc ,C_CusID varChar(15),' +
        'C_Money Decimal(15,5), C_Man varChar(32), C_Date DateTime, ' +
-       'C_End DateTime, C_Memo varChar(200), C_CustName varChar(200), '+
+       'C_End DateTime, C_Memo varChar(50), C_CustName varChar(50), '+
        'C_CashBalance numeric(28, 12), C_BillBalance3M numeric(28, 12), '+
        'C_BillBalance6M numeric(28, 12), C_PrestigeQuota numeric(28, 12), '+
        'C_TemporBalance numeric(28, 12), C_TemporAmount numeric(28, 12), '+
@@ -629,8 +641,8 @@ const
    *.C_BillBalance3M：三个月票据余额
    *.C_BillBalance6M：六个月票据余额
    *.C_PrestigeQuota：固定信用余额
-   *.C_TemporBalance：临时余额
-   *.C_TemporAmount：临时授信金额
+   *.C_TemporBalance：临时授信金额
+   *.C_TemporAmount： 临时余额
    *.C_WarningAmount：预警金额
    *.C_TemporTakeEffect：是否失效(0：否/1：是)
    *.C_FailureDate：失效日期
@@ -640,11 +652,11 @@ const
   -----------------------------------------------------------------------------}
 
   sSQL_NewCusConCredit = 'Create Table $Table(R_ID $Inc ,C_CusID varChar(15),' +
-       'C_Money $Float, C_CustName varChar(50), C_ContractId varChar(60),'+
-       'C_CashBalance $Float, C_BillBalance3M $Float, '+
-       'C_BillBalance6M $Float, C_PrestigeQuota $Float, '+
-       'C_TemporBalance $Float, C_TemporAmount $Float, '+
-       'C_WarningAmount $Float, C_TemporTakeEffect char(1), '+
+       'C_Money Decimal(15,5), C_CustName varChar(50), C_ContractId varChar(60),'+
+       'C_CashBalance Decimal(15,5), C_BillBalance3M Decimal(15,5), '+
+       'C_BillBalance6M Decimal(15,5), C_PrestigeQuota Decimal(15,5), '+
+       'C_TemporBalance Decimal(15,5), C_TemporAmount Decimal(15,5), '+
+       'C_WarningAmount Decimal(15,5), C_TemporTakeEffect char(1), '+
        'C_FailureDate DateTime, DataAreaID varChar(3),'+
        'C_LSCreditNum varChar(20), C_Date DateTime)';
   {-----------------------------------------------------------------------------
@@ -667,13 +679,13 @@ const
    *.C_LSCreditNum: 临时授信单号
   -----------------------------------------------------------------------------}
   sSQL_NewCustPresLog = 'Create Table $Table(R_ID $Inc ,C_CusID varChar(15),' +
-       'C_SubCash $Float, C_SubThreeBill $Float, '+
-       'C_SubSixBil $Float, C_SubTmp $Float, '+
-       'C_SubPrest $Float, C_Subdate DateTime, '+
-       'C_Createdby varChar(30), C_Createdate DateTime, '+
-       'C_Createtime Integer Default 0, DataAreaID varChar(3),'+
-       'RecID bigint  default ((0)),'+
-       'C_YKAmount $Float, C_TransPlanID varchar(20))';
+       'C_SubCash Decimal(15,5), C_SubThreeBill Decimal(15,5), '+
+       'C_SubSixBil Decimal(15,5), C_SubTmp Decimal(15,5), '+
+       'C_SubPrest Decimal(15,5), C_Subdate DateTime, '+
+       'C_Createdby varChar(30), C_Createdate int not null default ((0)), '+
+       'C_Createtime DateTime, DataAreaID varChar(3),'+
+       'RecID bigint not null default ((0)),'+
+       'C_YKAmount Decimal(15,5), C_TransPlanID varchar(20))';
   {-----------------------------------------------------------------------------
    信用额度增减表:Sys_CustPresLog    祁连山新增
    *.R_ID:编号
@@ -694,13 +706,13 @@ const
   -----------------------------------------------------------------------------}
   sSQL_NewContPresLog = 'Create Table $Table(R_ID $Inc ,C_CusID varChar(15),' +
        'C_ContractId varChar(20),'+
-       'C_SubCash $Float, C_SubThreeBill $Float, '+
-       'C_SubSixBil $Float, C_SubTmp $Float, '+
-       'C_SubPrest $Float, C_Subdate DateTime, '+
-       'C_Createdby varChar(30), C_Createdate DateTime, '+
-       'C_Createtime Integer Default 0, DataAreaID varChar(3),'+
-       'RecID bigint default ((0)),'+
-       'C_YKAmount $Float, C_TransPlanID varchar(20))';
+       'C_SubCash Decimal(15,5), C_SubThreeBill Decimal(15,5), '+
+       'C_SubSixBil Decimal(15,5), C_SubTmp Decimal(15,5), '+
+       'C_SubPrest Decimal(15,5), C_Subdate DateTime, '+
+       'C_Createdby varChar(30), C_Createdate int not null default((0)), '+
+       'C_Createtime DateTime, DataAreaID varChar(3),'+
+       'RecID bigint not null default ((0)),'+
+       'C_YKAmount Decimal(15,5), C_TransPlanID varchar(20))';
   {-----------------------------------------------------------------------------
    信用额度增减表(客户-合同):Sys_CustPresLog    祁连山新增
    *.R_ID:编号
@@ -722,12 +734,12 @@ const
   -----------------------------------------------------------------------------}
   sSQL_NewSaleContract = 'Create Table $Table(R_ID $Inc, C_ID varChar(15),' +
        'C_Project varChar(100),C_SaleMan varChar(15), C_Customer varChar(20), '+
-       'C_CustName varChar(200),' +
+       'C_CustName varChar(60),' +
        'C_Date varChar(20), C_Area varChar(50), C_Addr varChar(50),' +
        'C_Delivery varChar(50), C_Payment varChar(20), C_Approval varChar(30),' +
        'C_ZKDays Integer, C_XuNi Char(1), C_Freeze Char(1), C_Memo varChar(50),'+
-       'C_SFSP int default((0)),C_ContType int default((0)),'+
-       'C_ContQuota int default((0)), DataAreaID varChar(3) default(''dat''))';
+       'C_SFSP int not null default((0)),C_ContType int not null default((0)),'+
+       'C_ContQuota int not null default((0)), DataAreaID varChar(3) not null default(''dat''))';
   {-----------------------------------------------------------------------------
    销售合同: SalesContract
    *.R_ID: 编号
@@ -756,9 +768,9 @@ const
   sSQL_NewSContractExt = 'Create Table $Table(R_ID $Inc,' +
        'E_CID varChar(15), E_Type Char(1), ' +
        'E_StockNo varChar(20), E_StockName varChar(80),' +
-       'E_Value $Float, E_Price $Float, E_Money $Float,'+
-       'DataAreaID varChar(3) default (''dat''),'+
-       'E_RecID bigint default ((0)))';
+       'E_Value Decimal(15,5), E_Price Decimal(15,5), E_Money Decimal(15,5),'+
+       'DataAreaID varChar(3) not null default (''dat''),'+
+       'E_RecID bigint not null default ((0)))';
   {-----------------------------------------------------------------------------
    销售合同明细: SalesContract
    *.R_ID: 记录编号
@@ -784,7 +796,8 @@ const
        'Z_TriangleTrade int Default 0, Z_OrgAccountNum varChar(40),'+
        'Z_XSQYBM varChar(10), Z_KHSBM varChar(20), DataAreaID varChar(3),'+
        'Z_IntComOriSalesId varChar(40),Z_PurchType int, Z_CompanyId varchar(3),'+
-       'Z_OrgAccountName varChar(120))';
+       'Z_OrgAccountName varChar(120), Z_OrgXSQYMC varChar(20),'+
+       'Z_OrgXSQYBM varChar(20))';
   {-----------------------------------------------------------------------------
    纸卡办理: ZhiKa
    *.R_ID:记录编号
@@ -820,6 +833,8 @@ const
    *.Z_PurchType: 采购类型
    *.Z_OrgAccountNum: 最终账户
    *.Z_OrgAccountName: 最终账户名称
+   *.Z_OrgXSQYMC: 最终销售区域名称
+   *.Z_OrgXSQYBM: 最终销售区域编码
   -----------------------------------------------------------------------------}
 
   sSQL_NewZhiKaDtl = 'Create Table $Table(R_ID $Inc, D_ZID varChar(15),' +
@@ -827,7 +842,7 @@ const
        'D_Price $Float, D_Value $Float, D_PPrice $Float, ' +
        'D_TPrice Char(1) Default ''Y'', D_LineNum numeric(28, 12) Default 0,'+
        'D_SalesStatus int Default(0), DATAAREAID varChar(3),'+
-       'D_RECID bigint default ((0)),D_Blocked int default((0)))';
+       'D_RECID bigint not null default ((0)),D_Blocked int not null default((0)))';
   {-----------------------------------------------------------------------------
    纸卡明细:ZhiKaDtl
    *.R_ID:记录编号
@@ -847,8 +862,8 @@ const
 
   sSQL_NewBill = 'Create Table $Table(R_ID $Inc, L_ID varChar(20),' +
        'L_Card varChar(16), L_ZhiKa varChar(15), L_Project varChar(100),' +
-       'L_Area varChar(50), L_IfHYPrint Char(1), ' +
-       'L_CusID varChar(15), L_CusName varChar(200), L_CusPY varChar(200),' +
+       'L_Area varChar(50),' +
+       'L_CusID varChar(15), L_CusName varChar(80), L_CusPY varChar(80),' +
        'L_CusAccount varChar(30),'+
        'L_SaleID varChar(15), L_SaleMan varChar(32),' +
        'L_Type Char(1), L_StockNo varChar(20), L_StockName varChar(80),' +
@@ -864,20 +879,20 @@ const
        'L_OutFact DateTime, L_OutMan varChar(32),' +
        'L_Lading Char(1), L_IsVIP varChar(1), L_Seal varChar(100),' +
        'L_HYDan varChar(15), L_Man varChar(32), L_Date DateTime,' +
-       'L_DelMan varChar(32), L_DelDate DateTime,' +
-       'L_NewSendWx Char(1), L_DelSendWx Char(1), L_OutSendWx Char(1), '+
+       'L_DelMan varChar(32), L_DelDate DateTime,';
+  sSQL_NewBill1 ='L_NewSendWx Char(1), L_DelSendWx Char(1), L_OutSendWx Char(1), '+
        'P_PStation varChar(10), P_MStation varChar(10), L_PID varChar(15),'+
-       'L_LineNum numeric(28, 12) Default ((0)),L_LineRecID bigint,'+
+       'L_LineRecID bigint,'+
        'L_InvLocationId varChar(20),L_InvCenterId varChar(20),'+
-       'L_PlanQty numeric(28, 12) Default ((0)),L_CW varChar(10),'+
+       'L_PlanQty numeric(28, 12) not null Default ((0)),L_CW varChar(10),'+
        'L_Transporter varChar(20),L_vendpicklistid varChar(60),'+
-       'L_FYAX Char(1) default((0)),L_BDAX Char(1) default((0)),'+
-       'L_FYNUM int default((0)),L_BDNUM int default((0)),'+
-       'L_SalesType Char(1),L_FYDEL Char(1) default((0)),'+
-       'L_FYDELNUM int default((0)),L_EmptyOut char(1) default(''N''),'+
-       'L_EOUTAX Char(1) default((0)),L_EOUTNUM int default((0)),'+
-       'L_BDPrint Integer Default 0, L_HYPrint Integer Default 0,' +
-       'L_WorkOrder varchar(10), L_KHSBM varchar(20), L_JXSTHD varChar(200))';
+       'L_FYAX Char(1) not null default((0)),L_BDAX Char(1) not null default((0)),'+
+       'L_FYNUM int not null default((0)),L_BDNUM int not null default((0)),'+
+       'L_SalesType Char(1),L_FYDEL Char(1) not null default((0)),'+
+       'L_FYDELNUM int not null default((0)),L_EmptyOut char(1) not null default(''N''),'+
+       'L_EOUTAX Char(1) not null default((0)),L_EOUTNUM int not null default((0)),'+
+       'L_WorkOrder varchar(10), L_KHSBM varchar(20), L_OrgXSQYMC varChar(20),'+
+       'L_TriaTrade Char(1))';
   {-----------------------------------------------------------------------------
    交货单表: Bill
    *.R_ID: 编号
@@ -917,7 +932,6 @@ const
    *.P_PStation,P_MStation: （皮/毛）地磅编号
    *.L_PID: 磅单号
    祁连山新增
-   *.L_LineNum:行号
    *.L_LineRecID: 订单行编码  (AX必须)
    *.L_InvLocationId:仓库 (AX必须)
    *.L_InvCenterId:生产线 (AX必须)
@@ -938,6 +952,8 @@ const
    *.L_EOUTNUM：空车出厂上传次数
    *.L_WorkOrder: 班次
    *.L_KHSBM: 区域码
+   *.L_OrgXSQYMC: 最终销售区域
+   *.L_TriaTrade: 是否三角贸易
   -----------------------------------------------------------------------------}
   sSQL_NewOrdBaseMain = 'Create Table $Table(R_ID $Inc, M_ID varChar(20),' +
        'M_CID varChar(50), M_BStatus Char(1), ' +
@@ -973,7 +989,7 @@ const
        'B_StockType Char(1), B_StockNo varChar(32), B_StockName varChar(80),' +
        'B_Man varChar(32), B_Date DateTime, DATAAREAID varChar(3),' +
        'B_DelMan varChar(32), B_DelDate DateTime, B_Memo varChar(500),'+
-       'B_RecID bigint default ((0)), B_Blocked int default((0)))';
+       'B_RecID bigint not null default ((0)), B_Blocked int not null default((0)))';
   {-----------------------------------------------------------------------------
    采购申请单表: Order
    *.R_ID: 编号
@@ -996,6 +1012,20 @@ const
    *.B_Blocked: 已停止
    *.DATAAREAID：账套
   -----------------------------------------------------------------------------}
+  sSQL_NewDeduct = 'Create Table $Table(R_ID $Inc, D_Stock varChar(32),' +
+       'D_Name varChar(80), D_CusID varChar(32), D_CusName varChar(80),' +
+       'D_Value $Float, D_Type Char(1), D_Valid Char(1))';
+  {-----------------------------------------------------------------------------
+   批次编码表: Batcode
+   *.R_ID: 编号
+   *.D_Stock: 物料号
+   *.D_Name: 物料名
+   *.D_CusID: 客户号
+   *.D_CusName: 客户名
+   *.D_Value: 取值
+   *.D_Type: 类型(F,固定值;P,百分比)
+   *.D_Valid: 是否有效(Y/N)
+  -----------------------------------------------------------------------------}
 
   sSQL_NewOrder = 'Create Table $Table(R_ID $Inc, O_ID varChar(20),' +
        'O_BID varChar(20),O_Card varChar(16), O_CType varChar(1),' +
@@ -1006,7 +1036,7 @@ const
        'O_Truck varChar(15), O_OStatus Char(1),' +
        'O_Man varChar(32), O_Date DateTime,' +
        'O_DelMan varChar(32), O_DelDate DateTime, O_Memo varChar(500),'+
-       'O_BRecID bigint default ((0)))';
+       'O_BRecID bigint not null default ((0)))';
   {-----------------------------------------------------------------------------
    采购订单表: Order
    *.R_ID: 编号
@@ -1045,7 +1075,8 @@ const
        'D_YLine varChar(15), D_YLineName varChar(32), ' +
        'D_DelMan varChar(32), D_DelDate DateTime, D_YSResult Char(1), ' +
        'D_OutFact DateTime, D_OutMan varChar(32), D_Memo varChar(500),'+
-       'D_BDAX Char(1) default((0)),D_BDNUM int default((0)))';
+       'D_BDAX Char(1) not null default((0)),D_BDNUM int not null default((0)),'+
+       'D_RecID bigint not null default ((0)))';
   {-----------------------------------------------------------------------------
    采购订单明细表: OrderDetail
    *.R_ID: 编号
@@ -1072,6 +1103,7 @@ const
    *.D_OutFact,D_OutMan: 出厂放行
    *.D_BDAX: 是否上传
    *.D_BDNUM: 上传次数
+   *.D_RecID: 订单行编码
   -----------------------------------------------------------------------------}
 
   sSQL_NewCard = 'Create Table $Table(R_ID $Inc, C_Card varChar(16),' +
@@ -1104,7 +1136,10 @@ const
        'T_Card varChar(32), T_CardUse Char(1), T_NoVerify Char(1),' +
        'T_Valid Char(1), T_VIPTruck Char(1), T_HasGPS Char(1),'+
        'T_CompanyID varChar(10),T_XTECB varChar(10),T_VendAccount varChar(20),'+
-       'T_Driver varChar(10))';
+       'T_Driver varChar(10), T_SaleID varChar(20), T_RecID bigint not null default ((0)),'+
+       'T_MatePID varChar(15), T_MateID varChar(15), T_MateName varChar(80),' +
+       'T_SrcAddr varChar(150), T_DestAddr varChar(150)' +
+       ')';
   {-----------------------------------------------------------------------------
    车辆信息:Truck
    *.R_ID: 记录号
@@ -1137,6 +1172,15 @@ const
 
    有效平均皮重算法:
    T_PValue = (T_PValue * T_PTime + 新皮重) / (T_PTime + 1)
+   //---------------------------短倒业务数据信息--------------------------------
+   *.T_MatePID:上个物料编号
+   *.T_MateID:物料编号
+   *.T_MateName: 物料名称
+   *.T_SrcAddr:倒出地址
+   *.T_DestAddr:倒入地址
+   *.T_SaleID:订单号
+   *.T_RecID：订单行编码
+   ---------------------------------------------------------------------------//
   -----------------------------------------------------------------------------}
 
   sSQL_NewPoundLog = 'Create Table $Table(R_ID $Inc, P_ID varChar(15),' +
@@ -1150,7 +1194,7 @@ const
        'P_Direction varChar(10), P_PModel varChar(10), P_Status Char(1),' +
        'P_Valid Char(1), P_PrintNum Integer Default 1,' +
        'P_DelMan varChar(32), P_DelDate DateTime, P_KZValue $Float,'+
-       'P_HisTruck varchar(15), P_HisPValue $Float,'+
+       'P_HisTruck varchar(15), P_HisPValue decimal(15,5),'+
        'P_KWDate datetime)';
   {-----------------------------------------------------------------------------
    过磅记录: Materails
@@ -1179,6 +1223,7 @@ const
    *.P_HisTruck: 勘误车号
    *.P_HisPValue: 勘误皮重
    *.P_KWDate: 勘误日期
+
   -----------------------------------------------------------------------------}
 
   sSQL_NewPicture = 'Create Table $Table(R_ID $Inc, P_ID varChar(15),' +
@@ -1413,7 +1458,7 @@ const
    *.M_Weighning: 是否过磅
   -----------------------------------------------------------------------------}
 
-  sSQL_NewStockParam = 'Create Table $Table(P_ID varChar(15), P_Stock varChar(60),' +
+  sSQL_NewStockParam = 'Create Table $Table(P_ID varChar(15), P_Stock varChar(30),' +
        'P_Type Char(1), P_Name varChar(50), P_QLevel varChar(20), P_Memo varChar(50),' +
        'P_MgO varChar(20), P_SO3 varChar(20), P_ShaoShi varChar(20),' +
        'P_CL varChar(20), P_BiBiao varChar(20), P_ChuNing varChar(20),' +
@@ -1469,9 +1514,13 @@ const
        'R_28Ya1 varChar(20), R_28Ya2 varChar(20), R_28Ya3 varChar(20),' +
        'R_28Ya4 varChar(20), R_28Ya5 varChar(20), R_28Ya6 varChar(20),' +
        'R_Date DateTime, R_Man varChar(32),'+
-       'R_BatQuaStart varchar(20) default(''0''),'+
-       'R_BatQuaEnd varchar(20) default(''0''),'+
-       'R_BatValid char(1) default(''Y''))';
+       'R_BatQuaStart varchar(20) not null default(''0''),'+
+       'R_BatQuaEnd varchar(20) not null default(''0''),'+
+       'R_BatValid char(1) not null default(''Y''),'+
+       'R_ZMJNAME varChar(20), R_ZMJVALUE varChar(20),'+
+       'R_C3S varChar(20), R_C3A varChar(20),'+
+       'R_SHR3D varChar(20), R_SHR7D varChar(20),'+
+       'R_C2S varChar(20),R_CenterID varChar(20))';
   {-----------------------------------------------------------------------------
    检验记录:StockRecord
    *.R_ID:记录编号
@@ -1517,6 +1566,14 @@ const
    *.R_28Ya6:28抗压强度6
    *.R_Date:取样日期
    *.R_Man:录入人
+   *.R_ZMJNAME: 助磨剂名称
+   *.R_ZMJVALUE: 助磨剂量
+   *.R_C3S: 矿物C3S
+   *.R_C3A: 矿物C3A
+   *.R_SHR3D: 水化热3D
+   *.R_SHR7D；水化热7D
+   *.R_C2S: 矿物C2S
+   *.R_CenterID: 生产线ID
   -----------------------------------------------------------------------------}
 
   sSQL_NewStockHuaYan = 'Create Table $Table(H_ID $Inc, H_No varChar(15),' +
@@ -1617,10 +1674,10 @@ const
   sSQL_NewAddTreaty ='Create Table $Table(ID $Inc, A_SalesId varChar(20),' +
        'A_XTEadjustBillNum varChar(20), A_ItemId varChar(60), '+
        'A_SalesNewAmount numeric(28, 12),A_TakeEffectDate DateTime,'+
-       'A_TakeEffectTime int default((1)), '+
-       'RefRecid bigint default ((0)),'+
-       'Recid bigint default ((0)),'+
-       'DataAreaID varChar(3) default (''dat''),'+
+       'A_TakeEffectTime int not null default((1)), '+
+       'RefRecid bigint not null default ((0)),'+
+       'Recid bigint not null default ((0)),'+
+       'DataAreaID varChar(3) not null default (''dat''),'+
        'A_Date datetime)';
   {-----------------------------------------------------------------------------
    补充协议表：Sys_AddTreaty
@@ -1638,7 +1695,7 @@ const
   -----------------------------------------------------------------------------}
   sSQL_NewEmployees = 'Create Table $Table(ID $Inc, EmplId varChar(10),' +
        'EmplName varChar(60), '+
-       'DataAreaID varChar(3) default (''dat''))';
+       'DataAreaID varChar(3) not null default (''dat''))';
   {-----------------------------------------------------------------------------
    员工信息表：Sys_Employees
    *.EmplId: 员工编号
@@ -1685,6 +1742,71 @@ const
    *.Z_StartTime：开始时间
    *.Z_EndTime：结束时间
    *.Z_Date: 操作日期
+  -----------------------------------------------------------------------------}
+  sSQL_NewInOutFatory = 'Create Table $Table(R_ID $Inc, I_Card varChar(16),I_Truck varChar(20),' +
+       'I_CusName varChar(80), I_Context varChar(100), I_Memo varChar(200), '+
+       'I_Man varChar(20),I_Date datetime, I_InDate datetime, I_OutDate datetime)';
+  {-----------------------------------------------------------------------------
+   临时卡进厂出厂表：L_InOutFactory
+   *.I_Card: 卡号
+   *.I_Truck：车号
+   *.I_CusName：客户名称
+   *.I_Context：内容
+   *.I_Memo：备注
+   *.I_Man: 操作人
+   *.I_Date: 操作日期
+   *.I_InDate: 进厂日期
+   *.I_OutDate: 出厂日期
+  -----------------------------------------------------------------------------}
+  sSQL_NewKuWei = 'Create Table $Table(R_ID $Inc, K_Type varChar(16),' +
+       'K_LocationID varChar(20), K_KuWeiNo varChar(50), K_Date datetime)';
+  {-----------------------------------------------------------------------------
+   库位设置表：Sys_KuWei
+   *.K_Type: 类型  （袋装、散装、熟料）
+   *.K_LocationID: 仓库ID
+   *.K_KuWeiNo：库位
+   *.K_Date；操作日期
+  -----------------------------------------------------------------------------}
+  sSQL_NewCompanyArea = 'Create Table $Table(R_ID $Inc, C_XSQYBM varChar(20),' +
+       'C_XSQYMC varChar(20), C_XSGSDM varChar(20), C_XSGSMC varChar(20),'+
+       'C_XTESALESAREATYPE int,C_ISVALID int,C_RECVERSION int,C_RECID bigint)';
+  {-----------------------------------------------------------------------------
+   销售区域表：Sys_CompanyArea
+   *.C_XSQYBM: 销售区域编码
+   *.C_XSQYMC：销售区域名称
+   *.C_XSGSDM；销售公司编码
+   *.C_XSGSMC: 销售公司名称
+  -----------------------------------------------------------------------------}
+  sSQL_NewTransfer = 'Create Table $Table(R_ID $Inc, T_ID varChar(20),' +
+       'T_Card varChar(16), T_Truck varChar(15), T_PID varChar(15),' +
+       'T_SrcAddr varChar(160), T_DestAddr varChar(160),' +
+       'T_Type Char(1), T_StockNo varChar(32), T_StockName varChar(160),' +
+       'T_PValue $Float, T_PDate DateTime, T_PMan varChar(32),' +
+       'T_MValue $Float, T_MDate DateTime, T_MMan varChar(32),' +
+       'T_Value $Float, T_Man varChar(32), T_Date DateTime,' +
+       'T_DelMan varChar(32), T_DelDate DateTime, T_Memo varChar(500),' +
+       'T_DDAX Char(1), T_SyncNum Integer Default 0, T_SyncDate DateTime, T_SyncMemo varChar(500),'+
+       'T_BID varChar(20), T_BRecID bigint not null default ((0)))';
+  {-----------------------------------------------------------------------------
+   入厂表: Transfer
+   *.R_ID: 编号
+   *.T_ID: 短倒业务号
+   *.T_PID: 磅单编号
+   *.T_Card: 磁卡号
+   *.T_Truck: 车牌号
+   *.T_SrcAddr:倒出地点
+   *.T_DestAddr:倒入地点
+   *.T_Type: 类型(袋,散)
+   *.T_StockNo: 物料编号
+   *.T_StockName: 物料描述
+   *.T_PValue,T_PDate,T_PMan: 称皮重
+   *.T_MValue,T_MDate,T_MMan: 称毛重
+   *.T_Value: 收货量
+   *.T_Man,T_Date: 单据信息
+   *.T_DelMan,T_DelDate: 删除信息
+   *.T_DDAX, T_SyncNum, T_SyncDate, T_SyncMemo: 同步次数; 同步完成时间; 同步信息
+   *.T_BID: 订单编号
+   *.T_BRecID: 行编码
   -----------------------------------------------------------------------------}
 
 //------------------------------------------------------------------------------
@@ -1761,14 +1883,14 @@ end;
 
 //------------------------------------------------------------------------------
 //Desc: 添加系统表项
-procedure AddSysTableItem(const nTable,nNewSQL: String);
+procedure AddSysTableItem(const nTable,nNewSQL,nNewSQL1: String);
 var nP: PSysTableItem;
 begin
   New(nP);
   gSysTableList.Add(nP);
 
   nP.FTable := nTable;
-  nP.FNewSQL := nNewSQL;
+  nP.FNewSQL := nNewSQL+nNewSQL1;
 end;
 
 //Desc: 系统表
@@ -1776,79 +1898,86 @@ procedure InitSysTableList;
 begin
   gSysTableList := TList.Create;
 
-  AddSysTableItem(sTable_SysDict, sSQL_NewSysDict);
-  AddSysTableItem(sTable_ExtInfo, sSQL_NewExtInfo);
-  AddSysTableItem(sTable_SysLog, sSQL_NewSysLog);
+  AddSysTableItem(sTable_SysDict, sSQL_NewSysDict,'');
+  AddSysTableItem(sTable_ExtInfo, sSQL_NewExtInfo,'');
+  AddSysTableItem(sTable_SysLog, sSQL_NewSysLog,'');
 
-  AddSysTableItem(sTable_BaseInfo, sSQL_NewBaseInfo);
-  AddSysTableItem(sTable_SerialBase, sSQL_NewSerialBase);
-  AddSysTableItem(sTable_SerialStatus, sSQL_NewSerialStatus);
-  AddSysTableItem(sTable_StockMatch, sSQL_NewStockMatch);
-  AddSysTableItem(sTable_WorkePC, sSQL_NewWorkePC);
+  AddSysTableItem(sTable_BaseInfo, sSQL_NewBaseInfo,'');
+  AddSysTableItem(sTable_SerialBase, sSQL_NewSerialBase,'');
+  AddSysTableItem(sTable_SerialStatus, sSQL_NewSerialStatus,'');
+  AddSysTableItem(sTable_StockMatch, sSQL_NewStockMatch,'');
+  AddSysTableItem(sTable_WorkePC, sSQL_NewWorkePC,'');
 
-  AddSysTableItem(sTable_Customer, sSQL_NewCustomer);
-  AddSysTableItem(sTable_Salesman, sSQL_NewSalesMan);
-  AddSysTableItem(sTable_SaleContract, sSQL_NewSaleContract);
-  AddSysTableItem(sTable_SContractExt, sSQL_NewSContractExt);
+  AddSysTableItem(sTable_Customer, sSQL_NewCustomer,'');
+  AddSysTableItem(sTable_Salesman, sSQL_NewSalesMan,'');
+  AddSysTableItem(sTable_SaleContract, sSQL_NewSaleContract,'');
+  AddSysTableItem(sTable_SContractExt, sSQL_NewSContractExt,'');
 
-  AddSysTableItem(sTable_CusAccount, sSQL_NewCusAccount);
-  AddSysTableItem(sTable_InOutMoney, sSQL_NewInOutMoney);
-  AddSysTableItem(sTable_CusCredit, sSQL_NewCusCredit);
-  //AddSysTableItem(sTable_SysShouJu, sSQL_NewSysShouJu);
+  AddSysTableItem(sTable_CusAccount, sSQL_NewCusAccount,'');
+  AddSysTableItem(sTable_InOutMoney, sSQL_NewInOutMoney,'');
+  AddSysTableItem(sTable_CusCredit, sSQL_NewCusCredit,'');
+  AddSysTableItem(sTable_SysShouJu, sSQL_NewSysShouJu,'');
 
-  //AddSysTableItem(sTable_InvoiceWeek, sSQL_NewInvoiceWeek);
-  //AddSysTableItem(sTable_Invoice, sSQL_NewInvoice);
-  //AddSysTableItem(sTable_InvoiceDtl, sSQL_NewInvoiceDtl);
-  //AddSysTableItem(sTable_InvoiceReq, sSQL_NewInvoiceReq);
-  //AddSysTableItem(sTable_InvReqtemp, sSQL_NewInvoiceReq);
-  AddSysTableItem(sTable_DataTemp, sSQL_NewDataTemp);
+  AddSysTableItem(sTable_InvoiceWeek, sSQL_NewInvoiceWeek,'');
+  AddSysTableItem(sTable_Invoice, sSQL_NewInvoice,'');
+  AddSysTableItem(sTable_InvoiceDtl, sSQL_NewInvoiceDtl,'');
+  AddSysTableItem(sTable_InvoiceReq, sSQL_NewInvoiceReq,'');
+  AddSysTableItem(sTable_InvReqtemp, sSQL_NewInvoiceReq,'');
+  AddSysTableItem(sTable_DataTemp, sSQL_NewDataTemp,'');
 
-  AddSysTableItem(sTable_WeixinLog, sSQL_NewWXLog);
-  AddSysTableItem(sTable_WeixinMatch, sSQL_NewWXMatch);
-  AddSysTableItem(sTable_WeixinTemp, sSQL_NewWXTemplate);
+  AddSysTableItem(sTable_WeixinLog, sSQL_NewWXLog,'');
+  AddSysTableItem(sTable_WeixinMatch, sSQL_NewWXMatch,'');
+  AddSysTableItem(sTable_WeixinTemp, sSQL_NewWXTemplate,'');
 
-  AddSysTableItem(sTable_ZhiKa, sSQL_NewZhiKa);
-  AddSysTableItem(sTable_ZhiKaDtl, sSQL_NewZhiKaDtl);
-  AddSysTableItem(sTable_Card, sSQL_NewCard);
-  AddSysTableItem(sTable_Bill, sSQL_NewBill);
-  AddSysTableItem(sTable_BillBak, sSQL_NewBill);
+  AddSysTableItem(sTable_ZhiKa, sSQL_NewZhiKa,'');
+  AddSysTableItem(sTable_ZhiKaDtl, sSQL_NewZhiKaDtl,'');
+  AddSysTableItem(sTable_Card, sSQL_NewCard,'');
+  AddSysTableItem(sTable_Bill, sSQL_NewBill, sSQL_NewBill1);
+  AddSysTableItem(sTable_BillBak, sSQL_NewBill, sSQL_NewBill1);
 
-  AddSysTableItem(sTable_Truck, sSQL_NewTruck);
-  AddSysTableItem(sTable_ZTLines, sSQL_NewZTLines);
-  AddSysTableItem(sTable_ZTTrucks, sSQL_NewZTTrucks);
-  AddSysTableItem(sTable_PoundLog, sSQL_NewPoundLog);
-  AddSysTableItem(sTable_PoundBak, sSQL_NewPoundLog);
-  AddSysTableItem(sTable_Picture, sSQL_NewPicture);
-  AddSysTableItem(sTable_Provider, ssql_NewProvider);
-  AddSysTableItem(sTable_Materails, sSQL_NewMaterails);
+  AddSysTableItem(sTable_Truck, sSQL_NewTruck,'');
+  AddSysTableItem(sTable_ZTLines, sSQL_NewZTLines,'');
+  AddSysTableItem(sTable_ZTTrucks, sSQL_NewZTTrucks,'');
+  AddSysTableItem(sTable_PoundLog, sSQL_NewPoundLog,'');
+  AddSysTableItem(sTable_PoundBak, sSQL_NewPoundLog,'');
+  AddSysTableItem(sTable_Picture, sSQL_NewPicture,'');
+  AddSysTableItem(sTable_Provider, ssql_NewProvider,'');
+  AddSysTableItem(sTable_Materails, sSQL_NewMaterails,'');
 
-  AddSysTableItem(sTable_StockParam, sSQL_NewStockParam);
-  AddSysTableItem(sTable_StockParamExt, sSQL_NewStockRecord);
-  AddSysTableItem(sTable_StockRecord, sSQL_NewStockRecord);
-  AddSysTableItem(sTable_StockHuaYan, sSQL_NewStockHuaYan);
+  AddSysTableItem(sTable_StockParam, sSQL_NewStockParam,'');
+  AddSysTableItem(sTable_StockParamExt, sSQL_NewStockRecord,'');
+  AddSysTableItem(sTable_StockRecord, sSQL_NewStockRecord,'');
+  AddSysTableItem(sTable_StockHuaYan, sSQL_NewStockHuaYan,'');
 
-  AddSysTableItem(sTable_Order, sSQL_NewOrder);
-  AddSysTableItem(sTable_OrderBak, sSQL_NewOrder);
-  AddSysTableItem(sTable_OrderDtl, sSQL_NewOrderDtl);
-  AddSysTableItem(sTable_OrderDtlBak, sSQL_NewOrderDtl);
-  AddSysTableItem(sTable_OrderBaseMain, sSQL_NewOrdBaseMain);
-  AddSysTableItem(sTable_OrderBase, sSQL_NewOrderBase);
-  AddSysTableItem(sTable_OrderBaseBak, sSQL_NewOrderBase);
-  AddSysTableItem(sTable_BindInfo, sSQL_NewBindInfo);
-  AddSysTableItem(sTable_CustomerInfo, sSQL_NewCustomerInfo);
+  AddSysTableItem(sTable_Order, sSQL_NewOrder,'');
+  AddSysTableItem(sTable_OrderBak, sSQL_NewOrder,'');
+  AddSysTableItem(sTable_OrderDtl, sSQL_NewOrderDtl,'');
+  AddSysTableItem(sTable_OrderDtlBak, sSQL_NewOrderDtl,'');
+  AddSysTableItem(sTable_OrderBaseMain, sSQL_NewOrdBaseMain,'');
+  AddSysTableItem(sTable_OrderBase, sSQL_NewOrderBase,'');
+  AddSysTableItem(sTable_OrderBaseBak, sSQL_NewOrderBase,'');
+  AddSysTableItem(sTable_Deduct, sSQL_NewDeduct,'');
+  AddSysTableItem(sTable_BindInfo, sSQL_NewBindInfo,'');
+  AddSysTableItem(sTable_CustomerInfo, sSQL_NewCustomerInfo,'');
 
-  AddSysTableItem(sTable_InventDim, sSQL_NewInventDim);
-  AddSysTableItem(sTable_InventCenter, sSQL_NewInventCenter);
-  AddSysTableItem(sTable_InventLocation, sSQL_NewInventLocation);
-  AddSysTableItem(sTable_CusContCredit, sSQL_NewCusConCredit);
-  AddSysTableItem(sTable_CustPresLog, sSQL_NewCustPresLog);
-  AddSysTableItem(sTable_AddTreaty, sSQL_NewAddTreaty);
-  AddSysTableItem(sTable_ContPresLog, sSQL_NewContPresLog);
-  AddSysTableItem(sTable_InvCenGroup, sSQL_NewInvCenGroup);
-  AddSysTableItem(sTable_EMPL, sSQL_NewEmployees);
-  AddSysTableItem(sTable_PoundWucha, sSQL_NewPoundWucha);
-  AddSysTableItem(sTable_PoundDevia, sSQL_NewPoundDevia);
-  AddSysTableItem(sTable_ZTWorkSet, sSQL_NewZTWorkSet);
+  AddSysTableItem(sTable_InventDim, sSQL_NewInventDim,'');
+  AddSysTableItem(sTable_InventCenter, sSQL_NewInventCenter,'');
+  AddSysTableItem(sTable_InventLocation, sSQL_NewInventLocation,'');
+  AddSysTableItem(sTable_CusContCredit, sSQL_NewCusConCredit,'');
+  AddSysTableItem(sTable_CustPresLog, sSQL_NewCustPresLog,'');
+  AddSysTableItem(sTable_AddTreaty, sSQL_NewAddTreaty,'');
+  AddSysTableItem(sTable_ContPresLog, sSQL_NewContPresLog,'');
+  AddSysTableItem(sTable_InvCenGroup, sSQL_NewInvCenGroup,'');
+  AddSysTableItem(sTable_EMPL, sSQL_NewEmployees,'');
+  AddSysTableItem(sTable_PoundWucha, sSQL_NewPoundWucha,'');
+  AddSysTableItem(sTable_PoundDevia, sSQL_NewPoundDevia,'');
+  AddSysTableItem(sTable_ZTWorkSet, sSQL_NewZTWorkSet,'');
+  AddSysTableItem(sTable_InOutFatory, sSQL_NewInOutFatory,'');
+  AddSysTableItem(sTable_KuWei, sSQL_NewKuWei,'');
+  AddSysTableItem(sTable_CompanyArea, sSQL_NewCompanyArea, '');
+
+  AddSysTableItem(sTable_Transfer, sSQL_NewTransfer,'');
+  AddSysTableItem(sTable_TransferBak, sSQL_NewTransfer,'');
 end;
 
 //Desc: 清理系统表

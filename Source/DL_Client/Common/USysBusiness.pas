@@ -55,7 +55,7 @@ function WorkPCHasPopedom: Boolean;
 //验证主机是否已授权
 function GetSysValidDate: Integer;
 //获取系统有效期
-function GetTruckEmptyValue(nTruck: string): Double;
+function GetTruckEmptyValue(nTruck: string; var nPrePUse:string): Double;
 function GetSerialNo(const nGroup,nObject: string; nUseDate: Boolean = True): string;
 //获取串行编号
 function GetLadingStockItems(var nItems: TDynamicStockItemArray): Boolean;
@@ -181,6 +181,13 @@ function GetPurchaseOrders(const nCard,nPost: string;
 function SavePurchaseOrders(const nPost: string; const nData: TLadingBillItems;
  const nTunnel: PPTTunnelItem = nil): Boolean;
 //保存指定岗位的采购单
+function GetDuanDaoOrders(const nCard,nPost: string;
+ var nBills: TLadingBillItems): Boolean;
+//获取指定岗位的短倒单
+function SaveDuanDaoOrders(const nPost: string; const nData: TLadingBillItems;
+ const nTunnel: PPTTunnelItem = nil): Boolean;
+//保存指定岗位的采购单
+
 procedure LoadOrderItemToMC(const nItem: TLadingBillItem; const nMC: TStrings;
  const nDelimiter: string);
 
@@ -244,6 +251,8 @@ function SyncEmpTable: Boolean;
 //同步AX员工信息到DL系统 by lih 2016-07-19
 function SyncCement: Boolean;
 //同步AX水泥类型到DL系统
+function SyncWmsLocation: Boolean;
+//同步AX库位信息到DL
 function GetSampleID(nStockName:string; var nSampleDate:string):string;
 //获取试样编号
 function GetCenterID(nStockNo:string; var nLocationID:string):string;
@@ -278,7 +287,7 @@ procedure InitCenter(const nStockNo,nType: string; const nCbx:TcxComboBox);
 //初始化生产线ID
 function CheckTruckOK(const nTruck:string):Boolean;
 //检查车辆上次出厂是否超过一个小时
-procedure InitSampleID(const nStockNo,nType: string; const nCbx:TcxComboBox);
+procedure InitSampleID(const nStockName,nType,nCenterID: string; const nCbx:TcxComboBox);
 //初始化试样编号
 function GetSumTonnage(const nSampleID: string):Double;
 //获取此试样编号已装吨数
@@ -288,6 +297,30 @@ function UpdateSampleValid(const nSampleID: string):Boolean;
 //更新试样编号有效性
 function LoadNoSampleID(const nStockNo: string):Boolean;
 //是否无需试样编号
+procedure InitKuWei(const nType: string; const nCbx:TcxComboBox);
+//初始化库位号
+function GetCompanyArea(const nSaleID,nCompanyID:string):string;
+//在线获取销售区域
+procedure SaveCompanyArea(const nXSQYMC,nSaleID:string);
+//保存销售区域名称
+function PrintDuanDaoReport(nID: string; const nAsk: Boolean): Boolean;
+//打印短倒单据
+function PrintYesNo:Boolean;
+//是否打印
+function SaveTransferInfo(nTruck, nMateID, nMate, nSrcAddr, nDstAddr:string):Boolean;
+//短倒磁卡办理
+function LogoutDuanDaoCard(const nCard: string): Boolean;
+//注销指定磁卡
+function GetAutoInFactory(const nStockNo:string):Boolean;
+//获取是否自动进厂
+function GetCenterSUM(nStockNo,nCenterID:string):string;
+//获取生产线余量
+function GetZhikaYL(nZID,nRECID:string):Double;
+//获取纸卡余量
+function GetNeiDao(const nStockNo:string):Boolean;
+//获取内倒物料
+function GetDaoChe(const nStockNo:string):Boolean;
+//获取倒车下磅物料
 
 implementation
 
@@ -326,7 +359,7 @@ end;
 
 //------------------------------------------------------------------------------
 //Desc: 车辆有效皮重
-function GetTruckEmptyValue(nTruck: string): Double;
+function GetTruckEmptyValue(nTruck: string; var nPrePUse:string): Double;
 var nStr: string;
 begin
   nStr := 'Select T_PValue,T_PrePValue,T_PrePUse From %s Where T_Truck=''%s''';
@@ -335,10 +368,15 @@ begin
   with FDM.QueryTemp(nStr) do
   if RecordCount > 0 then
   begin
+    nPrePUse:= Fields[2].AsString;
+    {$IFDEF YDKP}
     if Fields[2].AsString='Y' then
       Result := Fields[1].AsFloat
     else
       Result := Fields[0].AsFloat;
+    {$ELSE}
+    Result := Fields[0].AsFloat;
+    {$ENDIF}
   end else Result := 0;
 end;
 
@@ -527,6 +565,40 @@ begin
     else nIn.FBase.FParam := sParam_NoHintOnError;
 
     nWorker := gBusinessWorkerManager.LockWorker(sCLI_BusinessBindUserWeiXin);
+    //get worker
+    Result := nWorker.WorkActive(@nIn, nOut);
+
+    if not Result then
+      WriteLog(nOut.FBase.FErrDesc);
+    //xxxxx
+  finally
+    gBusinessWorkerManager.RelaseWorker(nWorker);
+  end;
+end;
+
+//Date: 2014-09-05
+//Parm: 命令;数据;参数;输出
+//Desc: 调用中间件上的短倒单据对象
+function CallBusinessDuanDao(const nCmd: Integer; const nData,nExt: string;
+  const nOut: PWorkerBusinessCommand; const nWarn: Boolean = True): Boolean;
+var nIn: TWorkerBusinessCommand;
+    nWorker: TBusinessWorkerBase;
+begin
+  nWorker := nil;
+  try
+    nIn.FCommand := nCmd;
+    nIn.FData := nData;
+    nIn.FExtParam := nExt;
+
+    if nWarn then
+         nIn.FBase.FParam := ''
+    else nIn.FBase.FParam := sParam_NoHintOnError;
+
+    if gSysParam.FAutoPound and (not gSysParam.FIsManual) then
+      nIn.FBase.FParam := sParam_NoHintOnError;
+    //自动称重时不提示
+
+    nWorker := gBusinessWorkerManager.LockWorker(sCLI_BusinessDuanDao);
     //get worker
     Result := nWorker.WorkActive(@nIn, nOut);
 
@@ -834,8 +906,8 @@ function LoadCustomerInfo(const nCID: string; const nList: TcxMCListBox;
  var nHint: string): TDataSet;
 var nStr: string;
 begin
-  nStr := 'Select * From $Cus Where C_ID=''$ID''';
-  nStr := MacroValue(nStr, [MI('$Cus', sTable_Customer), MI('$ID', nCID)]);
+  nStr := 'Select * From $ZK Where Z_OrgAccountNum=''$ID''';
+  nStr := MacroValue(nStr, [MI('$ZK', sTable_ZhiKa), MI('$ID', nCID)]);
   //xxxxx
 
   nList.Clear;
@@ -844,14 +916,12 @@ begin
   if Result.RecordCount > 0 then
   with nList.Items,Result do
   begin
-    Add('客户编号:' + nList.Delimiter + FieldByName('C_ID').AsString);
-    Add('客户名称:' + nList.Delimiter + FieldByName('C_Name').AsString + ' ');
-    Add('企业法人:' + nList.Delimiter + FieldByName('C_FaRen').AsString + ' ');
-    Add('联系方式:' + nList.Delimiter + FieldByName('C_Phone').AsString + ' ');
+    Add('客户编号:' + nList.Delimiter + FieldByName('Z_OrgAccountNum').AsString);
+    Add('客户名称:' + nList.Delimiter + FieldByName('Z_OrgAccountName').AsString + ' ');
   end else
   begin
     Result := nil;
-    nHint := '客户信息已丢失';
+    nHint := '订单信息已丢失';
   end;
 end;
 
@@ -1081,6 +1151,14 @@ function SyncCement: Boolean;
 var nOut: TWorkerBusinessCommand;
 begin
   Result := CallBusinessCommand(cBC_SyncAXCement, '', '', @nOut);
+end;
+
+//Date: 2016-10-14
+//同步AX库位信息到DL
+function SyncWmsLocation: Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessCommand(cBC_SyncAXwmsLocation, '', '', @nOut);
 end;
 
 //Date: 2016-07-19
@@ -1600,20 +1678,22 @@ begin
   nFoutData:=nOut.FData;
   WriteLog('SaveLadingBills: '+nFoutData);
   if (not Result) or (nOut.FData = '') or (Pos('余额不足',nOut.FData)>0) then Exit;
-
-  if Assigned(nTunnel) then //过磅称重
+  if (Pos('P',nOut.FData)>0) and (Length(nOut.FData)<=11) then
   begin
-    nList := TStringList.Create;
-    try
-      CapturePicture(nTunnel, nList);
-      //capture file
+    if Assigned(nTunnel) then //过磅称重
+    begin
+      nList := TStringList.Create;
+      try
+        CapturePicture(nTunnel, nList);
+        //capture file
 
-      for nIdx:=0 to nList.Count - 1 do
-        SavePicture(nOut.FData, nData[0].FTruck,
-                                nData[0].FStockName, nList[nIdx]);
-      //save file
-    finally
-      nList.Free;
+        for nIdx:=0 to nList.Count - 1 do
+          SavePicture(nOut.FData, nData[0].FTruck,
+                                  nData[0].FStockName, nList[nIdx]);
+        //save file
+      finally
+        nList.Free;
+      end;
     end;
   end;
 end;
@@ -1734,6 +1814,46 @@ begin
   nStr := CombineBillItmes(nData);
   Result := CallBusinessPurchaseOrder(cBC_SavePostOrders, nStr, nPost, @nOut);
   if (not Result) or (nOut.FData = '') then Exit;
+
+  if Assigned(nTunnel) then //过磅称重
+  begin
+    nList := TStringList.Create;
+    try
+      CapturePicture(nTunnel, nList);
+      //capture file
+
+      for nIdx:=0 to nList.Count - 1 do
+        SavePicture(nOut.FData, nData[0].FTruck,
+                                nData[0].FStockName, nList[nIdx]);
+      //save file
+    finally
+      nList.Free;
+    end;
+  end;
+end;
+
+//获取指定岗位的短倒单
+function GetDuanDaoOrders(const nCard,nPost: string;
+ var nBills: TLadingBillItems): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessDuanDao(cBC_GetPostDDs, nCard, nPost, @nOut);
+  if Result then
+    AnalyseBillItems(nOut.FData, nBills);
+  //xxxxx
+end;
+
+//保存指定岗位的采购单
+function SaveDuanDaoOrders(const nPost: string; const nData: TLadingBillItems;
+ const nTunnel: PPTTunnelItem = nil): Boolean;
+var nStr: string;
+    nIdx: Integer;
+    nList: TStrings;
+    nOut: TWorkerBusinessCommand;
+begin
+  nStr := CombineBillItmes(nData);
+    Result := CallBusinessDuanDao(cBC_SavePostDDs, nStr, nPost, @nOut); 
+	  if (not Result) or (nOut.FData = '') then Exit;
 
   if Assigned(nTunnel) then //过磅称重
   begin
@@ -2119,14 +2239,9 @@ begin
   Result := FDR.PrintSuccess;
   if Result then
   begin
-    nStr := 'update %s set L_BDPrint=L_BDPrint+1 Where L_ID=''%s''';
+    nStr := 'update %s set L_BDPrint=L_BDPrint+1 Where L_ID=%s';
     nStr := Format(nStr, [sTable_Bill, nBill]);
-    with FDM.SQLTemp do
-    begin
-      Close;
-      SQL.Text:=nStr;
-      ExecSQL;
-    end;
+    FDM.ExecuteSQL(nStr);
   end;
 end;
 
@@ -2281,24 +2396,10 @@ end;
 //Desc: 获取nStock品种的报表文件
 function GetReportFileByStock(const nStock: string): string;
 begin
-  Result := gPath + sReportDir + 'HuanYan28.fr3'
-  {Result := GetPinYinOfStr(nStock);
-
-  if Pos('dj', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan42_DJ.fr3'
-  else if Pos('gsysl', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan_gsl.fr3'
-  else if Pos('kzf', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan_kzf.fr3'
-  else if Pos('qz', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan_qz.fr3'
-  else if Pos('32', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan32.fr3'
-  else if Pos('42', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan42.fr3'
-  else if Pos('52', Result) > 0 then
-    Result := gPath + sReportDir + 'HuaYan42.fr3'
-  else Result := '';}
+  if Pos('熟料',nStock)>0 then
+    Result := gPath + sReportDir + 'HuanYan28ShuLiao.fr3'
+  else
+    Result := gPath + sReportDir + 'HuanYan28.fr3';
 end;
 
 //Desc: 打印标识为nHID的化验单
@@ -2431,7 +2532,10 @@ begin
     ShowMsg(nStr, sHint); Exit;
   end;
 
-  nStr := gPath + sReportDir + 'HuanYan3HeGe.fr3';
+  if Pos('熟料',FDM.QueryTemp(nStr).FieldByName('L_StockName').AsString)>0 then
+    nStr := gPath + sReportDir + 'HuanYan3ShuLiao.fr3'
+  else
+    nStr := gPath + sReportDir + 'HuanYan3HeGe.fr3';
   if not FDR.LoadReportFile(nStr) then
   begin
     nStr := '无法正确加载报表文件';
@@ -2443,14 +2547,9 @@ begin
   Result := FDR.PrintSuccess;
   if Result then
   begin
-    nStr := 'update %s set L_HYPrint=L_HYPrint+1 Where L_ID=''%s''';
+    nStr := 'update %s set L_HYPrint=L_HYPrint+1 Where L_ID=%s';
     nStr := Format(nStr, [sTable_Bill, nBill]);
-    with FDM.SQLTemp do
-    begin
-      Close;
-      SQL.Text:=nStr;
-      ExecSQL;
-    end;
+    FDM.ExecuteSQL(nStr);
   end;
 end;
 
@@ -2563,6 +2662,8 @@ var nOut: TWorkerBusinessCommand;
 begin
   Result := CallBusinessCommand(cBC_GetPurOrdLine, nPurID, nDataArea, @nOut);
 end;
+
+
 //获取补充协议价格
 function LoadAddTreaty(RecID:string; var nNewPrice:Double):Boolean;
 var
@@ -2639,11 +2740,26 @@ end;
 //检查车辆上次出厂是否超过一个小时
 function CheckTruckOK(const nTruck:string):Boolean;
 var
-  nStr:string;
+  nStr,nJGSJ:string;
 begin
   Result:=True;
-  nStr := 'Select top 1 L_OutFact,DATEADD(MINUTE,60,L_OutFact) as L_OutFactAdd From %s Where (L_OutFact is not null) and L_Truck=''%s'' order by R_ID desc ';
-  nStr := Format(nStr, [sTable_Bill, nTruck]);
+  nStr := 'Select D_Value From %s Where D_Name = ''%s'' and D_Memo=''InFactAndBill'' ';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_SysParam]);
+  with FDM.QueryTemp(nStr) do
+  begin
+    if RecordCount > 0 then
+    begin
+      nJGSJ := FieldByName('D_Value').AsString;
+    end else
+    begin
+      nJGSJ := '0';
+    end;
+  end;
+  if not IsNumber(nJGSJ,False) then nJGSJ:='0';
+
+  nStr := 'Select top 1 L_OutFact,DATEADD(MINUTE,'+nJGSJ+',L_OutFact) as L_OutFactAdd From %s '+
+          'Where (L_OutFact is not null) and L_EmptyOut<>''%s'' and L_Truck=''%s'' order by R_ID desc ';
+  nStr := Format(nStr, [sTable_Bill, sFlag_Yes, nTruck]);
   with FDM.QueryTemp(nStr) do
   begin
     if RecordCount > 0 then
@@ -2653,15 +2769,15 @@ begin
   end;
 end;
 
-procedure InitSampleID(const nStockNO,nType: string; const nCbx:TcxComboBox);
+procedure InitSampleID(const nStockName,nType,nCenterID: string; const nCbx:TcxComboBox);
 var nSQL:string;
+    nIdx:Integer;
 begin
   nCbx.Properties.Items.Clear;
-  nSQL := 'Select IsNull(R_SerialNo,'''') as R_SerialNo,R_BatQuaStart,R_Date ' +
-          'From %s Left Join %s on R_PID = P_ID '+
-          'where P_ID=''%s%s'' and R_BatValid=''%s'' ';
-  nSQL := Format(nSQL,[sTable_StockRecord, sTable_StockParam,
-          nStockNO, nType, sFlag_Yes]);
+  nSQL := 'select IsNull(R_SerialNo,'''') as R_SerialNo,R_BatQuaStart,R_Date from %s a,%s b '+
+          'where a.R_PID = b.P_ID and b.P_Stock= ''%s'' and b.P_Type=''%s'' '+
+          'and ((R_CenterID=''%s'') or (R_CenterID='''') or (R_CenterID is null)) and R_BatValid=''%s'' ';
+  nSQL := Format(nSQL,[sTable_StockRecord, sTable_StockParam, nStockName, nType, nCenterID, sFlag_Yes]);
   with FDM.QueryTemp(nSQL) do
   begin
     if RecordCount > 0 then
@@ -2730,11 +2846,213 @@ function LoadNoSampleID(const nStockNo: string):Boolean;
 var nStr:string;
 begin
   Result:= False;
-  nStr := 'Select D_Index From %s Where D_Name=''%s'' And D_ParamC=''%s''';
-  nStr := Format(nStr, [sTable_SysDict, sFlag_StockItem, nStockNo]);
+  nStr := 'Select D_Value From %s Where D_Name=''%s'' and D_Value=''%s'' ';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_NoSampleID, nStockNo]);
   with FDM.QueryTemp(nStr) do
+  begin
+    if RecordCount > 0 then Result:= True;
+  end;
+end;
+
+procedure InitKuWei(const nType: string; const nCbx:TcxComboBox);
+var nSQL:string;
+    nIdx:Integer;
+begin
+  nCbx.Properties.Items.Clear;
+  nSQL := 'select K_KuWeiNo,K_LocationID from %s a where K_Type = ''%s'' ';
+  nSQL := Format(nSQL,[sTable_KuWei, nType]);
+  with FDM.QueryTemp(nSQL) do
+  begin
+    if RecordCount > 0 then
+    begin
+      First;
+      while not Eof do
+      begin
+        nCbx.Properties.Items.Add(Fields[0].AsString+'.'+Fields[1].AsString);
+        Next;
+      end;
+    end;
+  end;
+end;
+
+//在线获取销售区域
+function GetCompanyArea(const nSaleID,nCompanyID:string):string;
+var nOut: TWorkerBusinessCommand;
+begin
+  if CallBusinessCommand(cBC_GetAXCompanyArea, nSaleID, nCompanyID, @nOut) then
+    Result:= nOut.FData
+  else
+    Result:='Fail';
+end;
+
+//保存销售区域名称
+procedure SaveCompanyArea(const nXSQYMC,nSaleID:string);
+var
+  nSQL:string;
+begin
+  nSQL := 'update %s set Z_OrgXSQYMC=''%s'' where Z_ID = ''%s'' ';
+  nSQL := Format(nSQL,[sTable_ZhiKa, nXSQYMC, nSaleID]);
+  FDM.ExecuteSQL(nSQL);
+end;
+
+//打印nID对应的短倒单据
+function PrintDuanDaoReport(nID: string; const nAsk: Boolean): Boolean;
+var nStr: string;
+    nParam: TReportParamItem;
+begin
+  Result := False;
+
+  if nAsk then
+  begin
+    nStr := '是否要打印短倒业务称重磅单?';
+    if not QueryDlg(nStr, sAsk) then Exit;
+  end;
+
+  nStr := 'Select * From %s b Where T_ID=''%s''';
+  nStr := Format(nStr, [sTable_Transfer, nID]);
+  //xxxxx
+
+  if FDM.QueryTemp(nStr).RecordCount < 1 then
+  begin
+    nStr := '编号为[ %s ] 的记录已无效!!';
+    nStr := Format(nStr, [nID]);
+    ShowMsg(nStr, sHint); Exit;
+  end;
+
+  nStr := gPath + sReportDir + 'DuanDao.fr3';
+  if not FDR.LoadReportFile(nStr) then
+  begin
+    nStr := '无法正确加载报表文件';
+    ShowMsg(nStr, sHint); Exit;
+  end;
+
+  nParam.FName := 'UserName';
+  nParam.FValue := gSysParam.FUserID;
+  FDR.AddParamItem(nParam);
+
+  nParam.FName := 'Company';
+  nParam.FValue := gSysParam.FHintText;
+  FDR.AddParamItem(nParam);
+
+  FDR.Dataset1.DataSet := FDM.SqlTemp;
+  FDR.ShowReport;
+  Result := FDR.PrintSuccess;
+end;
+
+//是否打印
+function PrintYesNo:Boolean;
+var nStr:string;
+begin
+  Result:= False;
+  nStr := 'Select D_Value From %s Where D_Name=''%s'' ';
+  nStr := Format(nStr, [sTable_SysDict, sFlag_PrintBill]);
+  with FDM.QueryTemp(nStr) do
+  begin
+    if RecordCount > 0 then
+    begin
+      Last;
+      if Fields[0].AsString='Y' then Result:= True;
+    end;
+  end;
+end;
+
+function SaveTransferInfo(nTruck, nMateID, nMate, nSrcAddr, nDstAddr:string):Boolean;
+var nP: TFormCommandParam;
+begin
+  with nP do
+  begin
+    FParamA := nTruck;
+    FParamB := nMateID;
+    FParamC := nMate;
+    FParamD := nSrcAddr;
+    FParamE := nDstAddr;
+
+    CreateBaseFormItem(cFI_FormTransfer, '', @nP);
+    Result  := (FCommand = cCmd_ModalResult) and (FParamA = mrOK);
+  end;
+end;
+
+//注销指定磁卡
+function LogoutDuanDaoCard(const nCard: string): Boolean;
+var nOut: TWorkerBusinessCommand;
+begin
+  Result := CallBusinessDuanDao(cBC_LogOffDDCard, nCard, '', @nOut);
+end;
+
+//获取是否自动进厂
+function GetAutoInFactory(const nStockNo:string):Boolean;
+var
+  nSQL:string;
+begin
+  Result:= False;
+  nSQL := 'Select D_Value From %s Where D_Name=''AutoOutStock'' and D_Value=''%s''';
+  nSQL := Format(nSQL, [sTable_SysDict, nStockNo]);
+
+  with FDM.QueryTemp(nSQL) do
   if RecordCount > 0 then
-    Result := Fields[0].AsInteger <= 0;
+  begin
+    Result:=True;
+  end;
+end;
+
+//获取内倒物料
+function GetNeiDao(const nStockNo:string):Boolean;
+var
+  nSQL:string;
+begin
+  Result:= False;
+  nSQL := 'Select D_Value From %s Where D_Name=''NeiDaoPurch'' and D_Value=''%s''';
+  nSQL := Format(nSQL, [sTable_SysDict, nStockNo]);
+
+  with FDM.QueryTemp(nSQL) do
+  if RecordCount > 0 then
+  begin
+    Result:=True;
+  end;
+end;
+
+//获取倒车下磅物料
+function GetDaoChe(const nStockNo:string):Boolean;
+var
+  nSQL:string;
+begin
+  Result:= False;
+  nSQL := 'Select D_Value From %s Where D_Name=''DaoChePurch'' and D_Value=''%s''';
+  nSQL := Format(nSQL, [sTable_SysDict, nStockNo]);
+
+  with FDM.QueryTemp(nSQL) do
+  if RecordCount > 0 then
+  begin
+    Result:=True;
+  end;
+end;
+
+//Date:2016-10-09
+//获取生产线余量
+function GetCenterSUM(nStockNo,nCenterID:string):string;
+var nOut: TWorkerBusinessCommand;
+begin
+  if CallBusinessCommand(cBC_GetAXInVentSum, nStockNo, nCenterID, @nOut) then
+  begin
+    Result := nOut.FData;
+  end else Result := '';
+  WriteLog(nStockNo+'  '+nCenterID+'  '+Result);
+end;
+
+//获取纸卡余量
+function GetZhikaYL(nZID,nRECID:string):Double;
+var
+  nSQL:string;
+begin
+  Result:= 0.0;
+  nSQL := 'Select D_Value From %s Where D_ZID=''%s'' and D_RECID=''%s'' ';
+  nSQL := Format(nSQL, [sTable_ZhiKaDtl, nZID, nRECID]);
+  WriteLog(nSQL);
+  with FDM.QueryTemp(nSQL) do
+  if RecordCount > 0 then
+  begin
+    Result:=FieldByName('D_Value').AsFloat;
+  end;
 end;
 
 

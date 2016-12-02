@@ -1,5 +1,7 @@
 unit UFormSiteConfirm;
 
+{$I Link.Inc}
+
 interface
 
 uses
@@ -30,6 +32,10 @@ type
     dxLayout1Item12: TdxLayoutItem;
     cbxWorkSet: TcxComboBox;
     dxLayout1Item9: TdxLayoutItem;
+    cbxKw: TcxComboBox;
+    dxLayout1Item10: TdxLayoutItem;
+    EditCustomer: TcxTextEdit;
+    dxLayout1Item13: TdxLayoutItem;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure ComPort1RxChar(Sender: TObject; Count: Integer);
     procedure BtnOKClick(Sender: TObject);
@@ -48,7 +54,7 @@ type
     function GetNotOutBill(const nFID: string):Boolean; //获取未出厂交货单
     procedure ShowFormData;  //显示数据
     procedure ClearFormData; //清空数据
-    procedure GetSampleID(const nStockName,nType: string); //获取试样编号
+    procedure GetSampleID(const nStockName,nType,nCenterID: string); //获取试样编号
     function GetSumTonnage(const nSampleID: string):Double;//获取此试样编号已装吨数
     function GetSampleTonnage(const nSampleID: string; var nBatQuaS,nBatQuaE:Double):Boolean; //获取批次量
     function UpdateSampleValid(const nSampleID: string):Boolean;//更新试样编号有效性
@@ -85,6 +91,7 @@ type
   //提货数据记录
   TBatQua = record
     FID   : string;
+    FCustomer: string;
     FTruck : string;
     FStockName: string;
     FValue : Double;
@@ -316,6 +323,17 @@ begin
     end;
     ShowFormData;
     cbxWorkSet.Text:=GetWorkOrder;
+    if pos('熟',EditStockName.Text)>0 then
+    begin
+      InitKuWei('熟料',cbxKw);
+    end else
+    if pos('袋',EditStockName.Text)>0 then
+    begin
+      InitKuWei('袋装',cbxKw);
+    end else
+    begin
+      InitKuWei('散装',cbxKw);
+    end;
   end else
   begin
     nHint := '无交货单数据';
@@ -344,6 +362,7 @@ begin
       with gTiHuo[0] do
       begin
         FID:= FieldByName('L_ID').AsString;
+        FCustomer:= FieldByName('L_CusName').AsString;
         FTruck:= FieldByName('L_Truck').AsString;
         FStockName:= FieldByName('L_StockName').AsString;
         FValue:= FieldByName('L_Value').AsFloat;
@@ -361,11 +380,12 @@ begin
   with gTiHuo[0] do
   begin
     EditLID.Text:= FID;
+    EditCustomer.Text:= FCustomer;
     EditTruck.Text:= FTruck;
     EditStockName.Text:= FStockName;
     EditPlanWeight.Text:= FloatToStr(FValue);
     EditType.Text:= FType;
-    GetSampleID(FStockName,nType);
+    GetSampleID(FStockName,nType,FCenterID);
     cbxSampleID.Text:= FSampleID;
   end;
   Result:=True;
@@ -380,24 +400,26 @@ begin
   with gBills[0] do
   begin
     EditLID.Text:= gBills[0].FID;
+    EditCustomer.Text:= FCusName;
     EditTruck.Text:= gBills[0].FTruck;
     EditStockName.Text:= gBills[0].FStockName;
     EditPlanWeight.Text:= FloatToStr(gBills[0].FValue);
     if FType='0' then nType:='S' else nType:=FType;
     EditType.Text:= nType;
-    GetSampleID(FStockName,nType);
+    GetSampleID(FStockName,nType,FCenterID);
   end;
   BtnOK.Enabled:=True;
 end;
 
-procedure TfFormSiteConfirm.GetSampleID(const nStockName,nType: string);
+procedure TfFormSiteConfirm.GetSampleID(const nStockName,nType,nCenterID: string);
 var nSQL:string;
     nIdx:Integer;
 begin
   cbxSampleID.Properties.Items.Clear;
   nSQL := 'select IsNull(R_SerialNo,'''') as R_SerialNo,R_BatQuaStart,R_Date from %s a,%s b '+
-          'where a.R_PID = b.P_ID and b.P_Stock= ''%s'' and b.P_Type=''%s'' and R_BatValid=''%s'' ';
-  nSQL := Format(nSQL,[sTable_StockRecord, sTable_StockParam, nStockName, nType, sFlag_Yes]);
+          'where a.R_PID = b.P_ID and b.P_Stock= ''%s'' and b.P_Type=''%s'' '+
+          'and ((R_CenterID=''%s'') or (R_CenterID='''') or (R_CenterID is null)) and R_BatValid=''%s'' ';
+  nSQL := Format(nSQL,[sTable_StockRecord, sTable_StockParam, nStockName, nType, nCenterID, sFlag_Yes]);
   with FDM.QueryTemp(nSQL) do
   begin
     if RecordCount > 0 then
@@ -494,44 +516,50 @@ var nFoutData,nStr:string;
     nSQL:string;
 begin
   FSumTon:=0.00;
-  if cbxSampleID.ItemIndex<0 then
+  if Pos('孰料',EditStockName.Text)>0 then
   begin
-    ShowMsg('请选择试样编号', sHint);
-    Exit;
-  end;
-  FSumTon:=GetSumTonnage(cbxSampleID.Text);
-  cxLabel1.Caption:='已装吨数：'+Floattostr(FSumTon);
-  if GetSampleTonnage(cbxSampleID.Text, nBatQuaS, nBatQuaE) then
-  begin
-    if FSumTon-nBatQuaS>0 then
-    begin
-      ShowMsg('试样编号['+cbxSampleID.Text+']已超量',sHint);
-      if UpdateSampleValid(cbxSampleID.Text) then
-        GetSampleID(EditStockName.Text,EditType.Text);
-      Exit;
-    end;
-
-    nPlanW:=StrToFloat(EditPlanWeight.Text);
-    FSumTon:=FSumTon+nPlanW;
-    if nBatQuaS-FSumTon<=nBatQuaE then    //到预警量
-    begin
-      nStr:='试样编号['+cbxSampleID.Text+']已到预警量,是否继续保存？';
-      if not QueryDlg(nStr, sAsk) then
-      begin
-        {if UpdateSampleValid(cbxSampleID.Text) then
-          GetSampleID(EditStockName.Text,EditType.Text); }
-        Exit;
-      end;
-    end;
-    if FSumTon-nBatQuaS>0 then
-    begin
-      ShowMsg('试样编号['+cbxSampleID.Text+']已超量',sHint);
-      Exit;
-    end;
+    cbxSampleID.Text:='无';
   end else
   begin
-    ShowMsg('试样编号['+cbxSampleID.Text+']已失效',sHint);
-    Exit;
+    if cbxSampleID.ItemIndex<0 then
+    begin
+      ShowMsg('请选择试样编号', sHint);
+      Exit;
+    end;
+    FSumTon:=GetSumTonnage(cbxSampleID.Text);
+    cxLabel1.Caption:='已装吨数：'+Floattostr(FSumTon);
+    if GetSampleTonnage(cbxSampleID.Text, nBatQuaS, nBatQuaE) then
+    begin
+      if FSumTon-nBatQuaS>0 then
+      begin
+        ShowMsg('试样编号['+cbxSampleID.Text+']已超量',sHint);
+        if UpdateSampleValid(cbxSampleID.Text) then
+          GetSampleID(EditStockName.Text,EditType.Text,gBills[0].FCenterID);
+        Exit;
+      end;
+
+      nPlanW:=StrToFloat(EditPlanWeight.Text);
+      FSumTon:=FSumTon+nPlanW;
+      if nBatQuaS-FSumTon<=nBatQuaE then    //到预警量
+      begin
+        nStr:='试样编号['+cbxSampleID.Text+']已到预警量,是否继续保存？';
+        if not QueryDlg(nStr, sAsk) then
+        begin
+          if UpdateSampleValid(cbxSampleID.Text) then
+            GetSampleID(EditStockName.Text,EditType.Text,gBills[0].FCenterID);
+          Exit;
+        end;
+      end;
+      if FSumTon-nBatQuaS>0 then
+      begin
+        ShowMsg('试样编号['+cbxSampleID.Text+']已超量',sHint);
+        Exit;
+      end;
+    end else
+    begin
+      ShowMsg('试样编号['+cbxSampleID.Text+']已失效',sHint);
+      Exit;
+    end;
   end;
   if BtnOK.Caption='修改' then
   begin
@@ -556,11 +584,26 @@ begin
       ShowMsg('请选择班别',sHint);
       Exit;
     end;
+    if cbxKw.ItemIndex<0 then
+    begin
+      cbxKw.Focused;
+      ShowMsg('请选择库位',sHint);
+      Exit;
+    end;
     with gBills[0] do
     begin
       FSampleID:= cbxSampleID.Text;
       FYSValid:= sFlag_No;
-      FLocationID:= cbxWorkSet.Text;
+      FWorkOrder:= cbxWorkSet.Text;
+      nPos:=Pos('.',cbxKw.Text);
+      if (nPos>0) and (nPos<Length(cbxKw.Text)) then
+      begin
+        FKw:= Copy(cbxKw.Text,1,nPos-1);
+        FLocationID:= Copy(cbxKw.Text,nPos+1,Length(cbxKw.Text)-nPos);
+      end else
+      begin
+        ShowMsg('库位格式非法', sHint); Exit;
+      end;
     end;
     if FStockType=1 then
     begin

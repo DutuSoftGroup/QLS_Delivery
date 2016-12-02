@@ -12,7 +12,7 @@ uses
   UFormNormal, cxGraphics, cxControls, cxLookAndFeels,
   cxLookAndFeelPainters, cxContainer, cxEdit, cxMaskEdit, cxButtonEdit,
   cxTextEdit, dxLayoutControl, StdCtrls, cxDropDownEdit, cxLabel,
-  dxLayoutcxEditAdapters;
+  dxLayoutcxEditAdapters, cxCheckBox;
 
 type
   TfFormPurchaseOrder = class(TfFormNormal)
@@ -25,13 +25,6 @@ type
     dxLayout1Item5: TdxLayoutItem;
     EditProvider: TcxTextEdit;
     dxlytmLayout1Item3: TdxLayoutItem;
-    dxGroupLayout1Group2: TdxLayoutGroup;
-    EditSalesMan: TcxTextEdit;
-    dxlytmLayout1Item6: TdxLayoutItem;
-    EditProject: TcxTextEdit;
-    dxlytmLayout1Item7: TdxLayoutItem;
-    EditArea: TcxTextEdit;
-    dxlytmLayout1Item8: TdxLayoutItem;
     EditTruck: TcxButtonEdit;
     dxlytmLayout1Item12: TdxLayoutItem;
     EditCardType: TcxComboBox;
@@ -40,16 +33,14 @@ type
     cxLabel1: TcxLabel;
     dxLayout1Item4: TdxLayoutItem;
     dxLayout1Group4: TdxLayoutGroup;
+    chkNeiDao: TcxCheckBox;
+    dxLayout1Item6: TdxLayoutItem;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
     procedure EditLadingKeyPress(Sender: TObject; var Key: Char);
     procedure EditTruckPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
-
-    //查询未完成的提货单
-    function GetUnfinishedSalesOrder(const nTruckno:string):Boolean;
-    procedure EditTruckExit(Sender: TObject);
   protected
     { Protected declarations }
     FCardData, FListA: TStrings;
@@ -73,7 +64,7 @@ implementation
 {$R *.dfm}
 uses
   ULibFun, DB, IniFiles, UMgrControl, UAdjustForm, UFormBase, UBusinessPacker,
-  UDataModule, USysBusiness, USysDB, USysGrid, USysConst,USysLoger;
+  UDataModule, USysBusiness, USysDB, USysGrid, USysConst;
 
 var
   gForm: TfFormPurchaseOrder = nil;
@@ -153,8 +144,7 @@ begin
   if Key = Char(VK_RETURN) then
   begin
     Key := #0;
-    if GetUnfinishedSalesOrder(EditTruck.Text) then Exit;
-    
+
     if Sender = EditValue then
          BtnOK.Click
     else Perform(WM_NEXTDLGCTL, 0, 0);
@@ -188,9 +178,6 @@ begin
     EditID.Text       := Values['SQ_ID'];
     EditProvider.Text := Values['SQ_ProName'];
     EditMate.Text     := Values['SQ_StockName'];
-    EditSalesMan.Text := Values['SQ_SaleName'];
-    EditArea.Text     := Values['SQ_Area'];
-    EditProject.Text  := Values['SQ_Project'];
     //EditValue.Text    := Values['SQ_RestValue'];
     EditValue.Text    := '0.00';
   end;
@@ -247,10 +234,16 @@ begin
 
     Values['StockNO']       := FCardData.Values['SQ_StockNo'];
     Values['StockName']     := FCardData.Values['SQ_StockName'];
+
     if nCardType='L' then
           Values['Value']   := EditValue.Text
     else  Values['Value']   := '0.00';
+
     Values['RecID']         := FCardData.Values['SQ_RecID'];
+    if chkNeiDao.Checked then
+      Values['NeiDao']:= sFlag_Yes
+    else
+      Values['NeiDao']:= sFlag_No;
   end;
 
   nOrder := SaveOrder(PackerEncodeStr(FListA.Text));
@@ -261,38 +254,6 @@ begin
 
   ModalResult := mrOK;
   ShowMsg('采购订单保存成功', sHint);
-end;
-
-function TfFormPurchaseOrder.GetUnfinishedSalesOrder(
-  const nTruckno: string): Boolean;
-var
-  nSql,nStr:string;
-begin
-  nSql := 'select * from %s where L_Card<>'''' and l_truck=''%s''';
-  nSql := Format(nSql,[sTable_Bill,nTruckno]);
-
-  try
-    Result := FDM.QueryTemp(nSql).RecordCount>0;
-    if Result then
-    begin
-      nStr := '车牌号[ %s ]存在未完成的提货单！';
-      nStr := Format(nStr,[nTruckno]);
-      ShowMsg(nStr, sHint);
-      gSysLoger.AddLog(TfFormPurchaseOrder, '开采购单', nStr);
-    end;
-  except
-    on E:Exception do
-    begin
-      nSql := nsql+':'+e.Message;
-      ShowMsg(nSql, sHint);
-      gSysLoger.AddLog(TfFormPurchaseOrder, '开采购单', nSql);
-    end;
-  end;
-end;
-
-procedure TfFormPurchaseOrder.EditTruckExit(Sender: TObject);
-begin
-  BtnOK.Enabled := not GetUnfinishedSalesOrder(EditTruck.Text);
 end;
 
 initialization

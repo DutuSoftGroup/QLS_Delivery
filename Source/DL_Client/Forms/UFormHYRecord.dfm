@@ -1,9 +1,9 @@
 object fFormHYRecord: TfFormHYRecord
-  Left = 332
-  Top = 127
+  Left = 330
+  Top = 99
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
-  ClientHeight = 547
+  ClientHeight = 572
   ClientWidth = 470
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -22,7 +22,7 @@ object fFormHYRecord: TfFormHYRecord
     Left = 0
     Top = 0
     Width = 470
-    Height = 547
+    Height = 572
     Align = alClient
     TabOrder = 0
     TabStop = False
@@ -31,7 +31,7 @@ object fFormHYRecord: TfFormHYRecord
     LookAndFeel = FDM.dxLayoutWeb1
     object BtnOK: TButton
       Left = 314
-      Top = 513
+      Top = 538
       Width = 70
       Height = 23
       Caption = #20445#23384
@@ -40,7 +40,7 @@ object fFormHYRecord: TfFormHYRecord
     end
     object BtnExit: TButton
       Left = 389
-      Top = 513
+      Top = 538
       Width = 70
       Height = 23
       Caption = #21462#28040
@@ -74,7 +74,7 @@ object fFormHYRecord: TfFormHYRecord
       TabOrder = 4
       object Label17: TLabel
         Left = 6
-        Top = 253
+        Top = 282
         Width = 72
         Height = 12
         Caption = '3'#22825#25239#21387#24378#24230':'
@@ -82,7 +82,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object Label18: TLabel
         Left = 6
-        Top = 222
+        Top = 251
         Width = 72
         Height = 12
         Caption = '3'#22825#25239#25240#24378#24230':'
@@ -90,7 +90,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object Label25: TLabel
         Left = 205
-        Top = 253
+        Top = 282
         Width = 78
         Height = 12
         Caption = '28'#22825#25239#21387#24378#24230':'
@@ -98,16 +98,16 @@ object fFormHYRecord: TfFormHYRecord
       end
       object Label26: TLabel
         Left = 205
-        Top = 222
+        Top = 251
         Width = 78
         Height = 12
         Caption = '28'#22825#25239#25240#24378#24230':'
         Transparent = True
       end
       object Bevel2: TBevel
-        Left = 6
-        Top = 205
-        Width = 400
+        Left = 1
+        Top = 230
+        Width = 421
         Height = 7
         Shape = bsBottomLine
       end
@@ -120,11 +120,11 @@ object fFormHYRecord: TfFormHYRecord
         Transparent = True
       end
       object Label20: TLabel
-        Left = 144
+        Left = 136
         Top = 31
-        Width = 54
+        Width = 72
         Height = 12
-        Caption = #19981' '#28342' '#29289':'
+        Caption = #19981#28342#29289'/'#23494#24230':'
         Transparent = True
       end
       object Label21: TLabel
@@ -237,15 +237,78 @@ object fFormHYRecord: TfFormHYRecord
       end
       object Label44: TLabel
         Left = 294
-        Top = 30
+        Top = 31
         Width = 54
         Height = 12
         Caption = #28151#21512#26448#37327':'
         Transparent = True
       end
+      object Label1: TLabel
+        Left = 294
+        Top = 57
+        Width = 54
+        Height = 12
+        Caption = #21161#30952#21058#31867':'
+        Transparent = True
+      end
+      object Label2: TLabel
+        Left = 293
+        Top = 83
+        Width = 54
+        Height = 12
+        Caption = #21161#30952#21058#37327':'
+        Transparent = True
+      end
+      object Label3: TLabel
+        Left = 293
+        Top = 109
+        Width = 48
+        Height = 12
+        Caption = #30719#29289'C3S:'
+        Transparent = True
+      end
+      object Label4: TLabel
+        Left = 293
+        Top = 135
+        Width = 48
+        Height = 12
+        Caption = #30719#29289'C3A:'
+        Transparent = True
+      end
+      object Label5: TLabel
+        Left = 293
+        Top = 160
+        Width = 54
+        Height = 12
+        Caption = #27700#21270#28909'3D:'
+        Transparent = True
+      end
+      object Label6: TLabel
+        Left = 293
+        Top = 187
+        Width = 54
+        Height = 12
+        Caption = #27700#21270#28909'7D:'
+        Transparent = True
+      end
+      object Label7: TLabel
+        Left = 142
+        Top = 187
+        Width = 54
+        Height = 12
+        Caption = #38041' '#30789' '#27604':'
+      end
+      object Label8: TLabel
+        Left = 0
+        Top = 212
+        Width = 48
+        Height = 12
+        Caption = #30719#29289'C2S:'
+        Transparent = True
+      end
       object cxTextEdit29: TcxTextEdit
         Left = 76
-        Top = 217
+        Top = 246
         Hint = 'E.R_3DZhe1'
         ParentFont = False
         Properties.MaxLength = 20
@@ -256,7 +319,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit30: TcxTextEdit
         Left = 76
-        Top = 242
+        Top = 271
         Hint = 'E.R_3DYa1'
         ParentFont = False
         Properties.MaxLength = 20
@@ -267,7 +330,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit31: TcxTextEdit
         Left = 284
-        Top = 217
+        Top = 246
         Hint = 'E.R_28Zhe1'
         ParentFont = False
         Properties.MaxLength = 20
@@ -278,7 +341,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit32: TcxTextEdit
         Left = 284
-        Top = 242
+        Top = 271
         Hint = 'E.R_28Ya1'
         ParentFont = False
         Properties.MaxLength = 20
@@ -289,7 +352,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit33: TcxTextEdit
         Left = 324
-        Top = 217
+        Top = 246
         Hint = 'E.R_28Zhe2'
         ParentFont = False
         Properties.MaxLength = 20
@@ -300,7 +363,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit34: TcxTextEdit
         Left = 363
-        Top = 217
+        Top = 246
         Hint = 'E.R_28Zhe3'
         ParentFont = False
         Properties.MaxLength = 20
@@ -311,7 +374,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit35: TcxTextEdit
         Left = 324
-        Top = 242
+        Top = 271
         Hint = 'E.R_28Ya2'
         ParentFont = False
         Properties.MaxLength = 20
@@ -322,7 +385,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit36: TcxTextEdit
         Left = 363
-        Top = 242
+        Top = 271
         Hint = 'E.R_28Ya3'
         ParentFont = False
         Properties.MaxLength = 20
@@ -333,7 +396,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit37: TcxTextEdit
         Left = 116
-        Top = 217
+        Top = 246
         Hint = 'E.R_3DZhe2'
         ParentFont = False
         Properties.MaxLength = 20
@@ -344,7 +407,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit38: TcxTextEdit
         Left = 116
-        Top = 242
+        Top = 271
         Hint = 'E.R_3DYa2'
         ParentFont = False
         Properties.MaxLength = 20
@@ -355,7 +418,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit39: TcxTextEdit
         Left = 156
-        Top = 217
+        Top = 246
         Hint = 'E.R_3DZhe3'
         ParentFont = False
         Properties.MaxLength = 20
@@ -366,7 +429,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit40: TcxTextEdit
         Left = 156
-        Top = 242
+        Top = 271
         Hint = 'E.R_3DYa3'
         ParentFont = False
         Properties.MaxLength = 20
@@ -377,7 +440,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit41: TcxTextEdit
         Left = 76
-        Top = 259
+        Top = 288
         Hint = 'E.R_3DYa4'
         ParentFont = False
         Properties.MaxLength = 20
@@ -388,7 +451,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit42: TcxTextEdit
         Left = 116
-        Top = 259
+        Top = 288
         Hint = 'E.R_3DYa5'
         ParentFont = False
         Properties.MaxLength = 20
@@ -399,7 +462,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit43: TcxTextEdit
         Left = 156
-        Top = 259
+        Top = 288
         Hint = 'E.R_3DYa6'
         ParentFont = False
         Properties.MaxLength = 20
@@ -410,7 +473,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit47: TcxTextEdit
         Left = 284
-        Top = 259
+        Top = 288
         Hint = 'E.R_28Ya4'
         ParentFont = False
         Properties.MaxLength = 20
@@ -421,7 +484,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit48: TcxTextEdit
         Left = 324
-        Top = 259
+        Top = 288
         Hint = 'E.R_28Ya5'
         ParentFont = False
         Properties.MaxLength = 20
@@ -432,7 +495,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit49: TcxTextEdit
         Left = 363
-        Top = 259
+        Top = 288
         Hint = 'E.R_28Ya6'
         ParentFont = False
         Properties.MaxLength = 20
@@ -581,7 +644,7 @@ object fFormHYRecord: TfFormHYRecord
       end
       object cxTextEdit58: TcxTextEdit
         Left = 350
-        Top = 25
+        Top = 26
         Hint = 'E.R_HHCValue'
         ParentFont = False
         Properties.MaxLength = 20
@@ -607,6 +670,78 @@ object fFormHYRecord: TfFormHYRecord
         ParentFont = False
         TabOrder = 34
         Text = #35831#36873#25321
+        Width = 75
+      end
+      object cxTextEdit1: TcxTextEdit
+        Left = 349
+        Top = 52
+        Hint = 'E.R_ZMJNAME'
+        ParentFont = False
+        Properties.MaxLength = 20
+        TabOrder = 35
+        Width = 75
+      end
+      object cxTextEdit2: TcxTextEdit
+        Left = 349
+        Top = 79
+        Hint = 'E.R_ZMJVALUE'
+        ParentFont = False
+        Properties.MaxLength = 20
+        TabOrder = 36
+        Width = 75
+      end
+      object cxTextEdit3: TcxTextEdit
+        Left = 349
+        Top = 106
+        Hint = 'E.R_C3S'
+        ParentFont = False
+        Properties.MaxLength = 20
+        TabOrder = 37
+        Width = 75
+      end
+      object cxTextEdit4: TcxTextEdit
+        Left = 349
+        Top = 130
+        Hint = 'E.R_C3A'
+        ParentFont = False
+        Properties.MaxLength = 20
+        TabOrder = 38
+        Width = 75
+      end
+      object cxTextEdit5: TcxTextEdit
+        Left = 349
+        Top = 155
+        Hint = 'E.R_SHR3D'
+        ParentFont = False
+        Properties.MaxLength = 20
+        TabOrder = 39
+        Width = 75
+      end
+      object cxTextEdit6: TcxTextEdit
+        Left = 349
+        Top = 180
+        Hint = 'E.R_SHR7D'
+        ParentFont = False
+        Properties.MaxLength = 20
+        TabOrder = 40
+        Width = 75
+      end
+      object cxTextEdit7: TcxTextEdit
+        Left = 204
+        Top = 180
+        Hint = 'E.R_GaiGui'
+        ParentFont = False
+        Properties.MaxLength = 20
+        TabOrder = 41
+        Width = 75
+      end
+      object cxTextEdit8: TcxTextEdit
+        Left = 59
+        Top = 208
+        Hint = 'E.R_C2S'
+        ParentFont = False
+        Properties.MaxLength = 20
+        TabOrder = 42
         Width = 75
       end
     end
@@ -654,14 +789,23 @@ object fFormHYRecord: TfFormHYRecord
       ParentFont = False
       Properties.OnChange = EditStockPropertiesEditValueChanged
       TabOrder = 3
-      Width = 121
+      Width = 155
     end
     object EditQuaEnd: TcxTextEdit
       Left = 93
       Top = 136
       Hint = 'E.R_BatQuaEnd'
+      ParentFont = False
       TabOrder = 8
       Width = 121
+    end
+    object cbxCenterID: TcxComboBox
+      Left = 299
+      Top = 61
+      Hint = 'E.R_CenterID'
+      ParentFont = False
+      TabOrder = 10
+      Width = 148
     end
     object dxLayoutControl1Group_Root: TdxLayoutGroup
       ShowCaption = False
@@ -674,10 +818,21 @@ object fFormHYRecord: TfFormHYRecord
           Control = EditID
           ControlOptions.ShowBorder = False
         end
-        object dxLayoutControl1Item7: TdxLayoutItem
-          Caption = #25152#23646#21697#31181':'
-          Control = EditStock
-          ControlOptions.ShowBorder = False
+        object dxLayoutControl1Group4: TdxLayoutGroup
+          ShowCaption = False
+          Hidden = True
+          LayoutDirection = ldHorizontal
+          ShowBorder = False
+          object dxLayoutControl1Item7: TdxLayoutItem
+            Caption = #25152#23646#21697#31181':'
+            Control = EditStock
+            ControlOptions.ShowBorder = False
+          end
+          object dxLayoutControl1Item9: TdxLayoutItem
+            Caption = #29983#20135#32447':'
+            Control = cbxCenterID
+            ControlOptions.ShowBorder = False
+          end
         end
         object dxLayoutControl1Group3: TdxLayoutGroup
           ShowCaption = False

@@ -271,6 +271,51 @@ begin
   nCardType := '';
   if not GetCardUsed(nCard, nCardType) then Exit;
 
+  if nCardType = sFlag_Other then
+  begin
+    nStr := 'select I_InDate from %s Where I_Card=''%s'' ';
+    nStr := Format(nStr, [sTable_InOutFatory, nCard]);
+    with gDBConnManager.WorkerQuery(nDB,nStr) do
+    begin
+      if RecordCount < 1 then
+      begin
+        nStr := '读取磁卡[ %s ]订单信息失败.';
+        nStr := Format(nStr, [nCard]);
+
+        WriteHardHelperLog(nStr, sPost_In);
+        Exit;
+      end;
+      if FieldByName('I_InDate').IsNull then
+      begin
+        gHYReaderManager.OpenDoor(nReader);//抬杆
+        nStr := '临时卡[ %s ]进厂.';
+        nStr := Format(nStr, [nCard]);
+
+        WriteHardHelperLog(nStr, sPost_In);
+        nStr := 'Update %s Set I_InDate=getdate() Where I_Card=''%s''';
+        nStr := Format(nStr, [sTable_InOutFatory, nCard]);
+        //xxxxx
+
+        gDBConnManager.WorkerExec(nDB, nStr);
+      end;
+    end;
+    nStr := 'select * from %s Where (I_Card=''%s'') and '+
+            '(I_InDate is not null) and (I_OutDate is not null) ';
+    nStr := Format(nStr, [sTable_InOutFatory, nCard]);
+    with gDBConnManager.WorkerQuery(nDB,nStr) do
+    if RecordCount > 0 then
+    begin
+      nStr := 'Update %s Set C_Status=''%s'' Where C_Card=''%s''';
+      nStr := Format(nStr, [sTable_Card, sFlag_CardIdle, nCard]);
+      gDBConnManager.WorkerExec(nDB, nStr);
+
+      nStr := 'Update %s Set I_Card='''' Where I_Card=''%s''';
+      nStr := Format(nStr, [sTable_InOutFatory, nCard]);
+      gDBConnManager.WorkerExec(nDB, nStr);
+    end;
+    Exit;
+  end;
+
   if nCardType = sFlag_Provide then
         nRet := GetLadingOrders(nCard, sFlag_TruckIn, nTrucks)
   else  nRet := GetLadingBills(nCard, sFlag_TruckIn, nTrucks);
@@ -296,18 +341,32 @@ begin
   for nIdx:=Low(nTrucks) to High(nTrucks) do
   with nTrucks[nIdx] do
   begin
-    if (FStatus = sFlag_TruckNone) or (FStatus = sFlag_TruckIn) then Continue;
     //未进长,或已进厂
-
+    {$IFDEF YDKP}
+      {$IFDEF XHPZ}
+      if (FStatus = sFlag_TruckNone) or (FStatus = sFlag_TruckIn) then Continue;
+      {$ELSE}
+      if (FStatus = sFlag_TruckNone) then Continue;
+      {$ENDIF}
+    {$ELSE}
+    if (FStatus = sFlag_TruckNone) or (FStatus = sFlag_TruckIn) then Continue;
+    {$ENDIF}
     nStr := '车辆[ %s ]下一状态为:[ %s ],进厂刷卡无效.';
     nStr := Format(nStr, [FTruck, TruckStatusToStr(FNextStatus)]);
-    
+
     WriteHardHelperLog(nStr, sPost_In);
     Exit;
   end;
 
+  //{$IFDEF YDKP}
+
+  //{$ELSE}
   if nTrucks[0].FStatus = sFlag_TruckIn then
   begin
+    {$IFDEF GGJC}
+    gHardwareHelper.SetCardLastDone(nCard, nReader);
+    gHardwareHelper.SetReaderCard(nReader, nCard);
+    {$ELSE}
     if gTruckQueueManager.IsTruckAutoIn then
     begin
       gHardwareHelper.SetCardLastDone(nCard, nReader);
@@ -320,21 +379,12 @@ begin
       nStr := '车辆[ %s ]再次抬杆操作.';
       nStr := Format(nStr, [nTrucks[0].FTruck]);
       WriteHardHelperLog(nStr, sPost_In);
-      {if gTruckQueueManager.TruckReInfactFobidden(nTrucks[0].FTruck) then
-      begin
-        //BlueOpenDoor(nReader);
-        gHYReaderManager.OpenDoor(nReader);
-        //抬杆
-
-        nStr := '车辆[ %s ]再次抬杆操作.';
-        nStr := Format(nStr, [nTrucks[0].FTruck]);
-        WriteHardHelperLog(nStr, sPost_In);
-      end; }
     end;
-
+    {$ENDIF}
     Exit;
   end;
-
+  //{$ENDIF}
+  
   if nCardType = sFlag_Provide then
   begin
     if not SaveLadingOrders(sFlag_TruckIn, nTrucks) then
@@ -345,7 +395,10 @@ begin
       WriteHardHelperLog(nStr, sPost_In);
       Exit;
     end;
-
+    {$IFDEF GGJC}
+    gHardwareHelper.SetCardLastDone(nCard, nReader);
+    gHardwareHelper.SetReaderCard(nReader, nCard);
+    {$ELSE}
     if gTruckQueueManager.IsTruckAutoIn then
     begin
       gHardwareHelper.SetCardLastDone(nCard, nReader);
@@ -356,7 +409,7 @@ begin
       gHYReaderManager.OpenDoor(nReader);
       //抬杆
     end;
-
+    {$ENDIF}
     nStr := '原材料卡[%s]进厂抬杆成功';
     nStr := Format(nStr, [nCard]);
     WriteHardHelperLog(nStr, sPost_In);
@@ -404,7 +457,10 @@ begin
     WriteHardHelperLog(nStr, sPost_In);
     Exit;
   end;
-
+  {$IFDEF GGJC}
+  gHardwareHelper.SetCardLastDone(nCard, nReader);
+  gHardwareHelper.SetReaderCard(nReader, nCard);
+  {$ELSE}
   if gTruckQueueManager.IsTruckAutoIn then
   begin
     gHardwareHelper.SetCardLastDone(nCard, nReader);
@@ -415,7 +471,7 @@ begin
     gHYReaderManager.OpenDoor(nReader);
     //抬杆
   end;
-
+  {$ENDIF}
   {with gTruckQueueManager do
   if not IsDelayQueue then //厂外模式,进厂时绑定道号(一车多单)
   try
@@ -454,9 +510,72 @@ var nStr,nCardType: string;
     {$IFDEF PrintBillMoney}
     nOut: TWorkerBusinessCommand;
     {$ENDIF}
+    nErrNum: Integer;
+    nDBConn: PDBWorker;
 begin
   nCardType := '';
   if not GetCardUsed(nCard, nCardType) then Exit;
+
+  if nCardType = sFlag_Other then
+  begin
+    nDBConn := nil;
+    with gParamManager.ActiveParam^ do
+    Try
+      nDBConn := gDBConnManager.GetConnection(FDB.FID, nErrNum);
+      if not Assigned(nDBConn) then
+      begin
+        WriteHardHelperLog('连接HM数据库失败(DBConn Is Null).');
+        Exit;
+      end;
+
+      if not nDBConn.FConn.Connected then
+        nDBConn.FConn.Connected := True;
+      //conn db
+      nStr := 'select I_OutDate from %s Where I_Card=''%s'' ';
+      nStr := Format(nStr, [sTable_InOutFatory, nCard]);
+      with gDBConnManager.WorkerQuery(nDBConn,nStr) do
+      begin
+        if RecordCount < 1 then
+        begin
+          nStr := '读取磁卡[ %s ]订单信息失败.';
+          nStr := Format(nStr, [nCard]);
+
+          WriteHardHelperLog(nStr, sPost_In);
+          Exit;
+        end;
+        if FieldByName('I_OutDate').IsNull then
+        begin
+          gHYReaderManager.OpenDoor(nReader);//抬杆
+          nStr := '临时卡[ %s ]出厂.';
+          nStr := Format(nStr, [nCard]);
+
+          WriteHardHelperLog(nStr, sPost_In);
+          nStr := 'Update %s Set I_OutDate=getdate() Where I_Card=''%s''';
+          nStr := Format(nStr, [sTable_InOutFatory, nCard]);
+          //xxxxx
+
+          gDBConnManager.WorkerExec(nDBConn, nStr);
+        end;
+      end;
+      nStr := 'select * from %s Where (I_Card=''%s'') and '+
+              '(I_InDate is not null) and (I_OutDate is not null) ';
+      nStr := Format(nStr, [sTable_InOutFatory, nCard]);
+      with gDBConnManager.WorkerQuery(nDBConn,nStr) do
+      if RecordCount > 0 then
+      begin
+        nStr := 'Update %s Set C_Status=''%s'' Where C_Card=''%s''';
+        nStr := Format(nStr, [sTable_Card, sFlag_CardIdle, nCard]);
+        gDBConnManager.WorkerExec(nDBConn, nStr);
+
+        nStr := 'Update %s Set I_Card='''' Where I_Card=''%s''';
+        nStr := Format(nStr, [sTable_InOutFatory, nCard]);
+        gDBConnManager.WorkerExec(nDBConn, nStr);
+      end;
+    finally
+      gDBConnManager.ReleaseConnection(nDBConn);
+    end;
+    Exit;
+  end;
 
   if nCardType = sFlag_Provide then
         nRet := GetLadingOrders(nCard, sFlag_TruckOut, nTrucks)
@@ -511,6 +630,16 @@ begin
 
   for nIdx:=Low(nTrucks) to High(nTrucks) do
   begin
+    {$IFDEF ZXKP}
+    if (nCardType = sFlag_Provide) and (nTrucks[nIdx].FNeiDao = sFlag_Yes) then
+    begin
+      nStr := '车辆[ %s ]内倒出厂不打印.';
+      nStr := Format(nStr, [nTrucks[nIdx].FTruck]);
+
+      WriteHardHelperLog(nStr, sPost_Out);
+      Exit;
+    end;
+    {$ENDIF}
     {$IFDEF PrintBillMoney}
     if CallBusinessCommand(cBC_GetZhiKaMoney,nTrucks[nIdx].FZhiKa,'',@nOut) then
          nStr := #8 + nOut.FData
@@ -1191,7 +1320,7 @@ end;
 procedure MakeTruckAutoOut(const nCardNo: string);
 var nReader,nExtReader: string;
 begin
-  if gTruckQueueManager.IsTruckAutoOut then
+  //if gTruckQueueManager.IsTruckAutoOut then
   begin
     nReader := gHardwareHelper.GetReaderLastOn(nCardNo,nExtReader);
     if nReader <> '' then

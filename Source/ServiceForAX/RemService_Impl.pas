@@ -12,7 +12,7 @@ unit RemService_Impl;
 interface
 
 uses
-  {vcl:} Classes, SysUtils, 
+  {vcl:} Classes, SysUtils,
   {RemObjects:} uROXMLIntf, uROClientIntf, uROTypes, uROServer, uROServerIntf, uROSessions,
   {Generated:} MyLibrary_Intf;
 
@@ -46,201 +46,216 @@ function TRemService.DL2WRZSINFO(const BusinessType: Widestring; const XMLPrimar
 var
   nOut: TWorkerBusinessCommand;
 begin
-  WriteLog(BusinessType);
-  WriteLog(XMLPrimaryKey);
-  if not GetOnLineModel then
-  begin
-    ServerForm.ChkModel.Checked:=False;
-    WriteLog('离线模式');
-    Result:=3;
-    Exit;
-  end else
-  begin
-    ServerForm.ChkModel.Checked:=True;
-    WriteLog('在线模式');
+  try
+    WriteLog(BusinessType);
+    WriteLog(XMLPrimaryKey);
+    try
+      if not GetOnLineModel then
+      begin
+        ServerForm.ChkModel.Checked:=False;
+        WriteLog('离线模式');
+        Result:=3;
+        Exit;
+      end else
+      begin
+        ServerForm.ChkModel.Checked:=True;
+        WriteLog('在线模式');
+      end;
+    except
+      on e:Exception do
+      begin
+        WriteLog('获取模式：'+e.Message);
+      end;
+    end;
+    if BusinessType='EDS_0001' then
+    begin
+      if GetAXSalesOrder(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0002' then
+    begin
+      if GetAXSalesOrdLine(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0003' then
+    begin
+      if GetAXSupAgreement(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0004' then
+    begin
+      if GetAXCreLimCust(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0005' then
+    begin
+      if GetAXCreLimCusCont(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0008' then
+    begin
+      if GetAXSalesContract(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0009' then
+    begin
+      if GetAXVehicleNo(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0010' then
+    begin
+      if GetAXSalesContLine(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EPS_0001' then
+    begin
+      if GetAXPurOrder(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EPS_0002' then
+    begin
+      if GetAXPurOrdLine(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDP_0004' then
+    begin
+        Result:=0;
+    end else
+    if BusinessType='EDP_0005' then
+    begin
+        Result:=0;
+    end else
+    if BusinessType='EDB_0003' then
+    begin
+        Result:=0;
+    end else
+    if BusinessType='EDB_0004' then
+    begin
+        Result:=0;
+    end else
+    if BusinessType='EDB_0005' then
+    begin
+        Result:=0;
+    end else
+    if BusinessType='EDB_0006' then
+    begin
+      if GetAXCustomer(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDB_0007' then
+    begin
+        Result:=0;
+    end else
+    if BusinessType='EDB_0008' then
+    begin
+      if GetAXMaterails(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    begin
+      Result:=3;
+    end;
+    case Result of
+      0:WriteLog('成功');
+      -1:WriteLog('失败');
+      3:WriteLog('其他错误');
+    end;
+    {if BusinessType='EDS_0001' then
+    begin
+      if CallBusinessCommand(cBC_GetSalesOrder, XMLPrimaryKey, '', @nOut) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0002' then
+    begin
+      if CallBusinessCommand(cBC_GetSalesOrdLine, XMLPrimaryKey, '', @nOut) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0003' then
+    begin
+      if CallBusinessCommand(cBC_GetSupAgreement, XMLPrimaryKey, '', @nOut) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0004' then
+    begin
+      if CallBusinessCommand(cBC_GetCreLimCust, XMLPrimaryKey, '', @nOut) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0005' then
+    begin
+      if CallBusinessCommand(cBC_GetCreLimCusCont, XMLPrimaryKey, '', @nOut) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0008' then
+    begin
+      if CallBusinessCommand(cBC_GetSalesCont, XMLPrimaryKey, '', @nOut) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EDS_0009' then
+    begin
+      if CallBusinessCommand(cBC_GetVehicleNo, XMLPrimaryKey, '', @nOut) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EPS_0001' then
+    begin
+      if CallBusinessCommand(cBC_GetPurOrder, XMLPrimaryKey, '', @nOut) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EPS_0002' then
+    begin
+      if CallBusinessCommand(cBC_GetPurOrdLine, XMLPrimaryKey, '', @nOut) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    begin
+      Result:=3;
+    end;}
+  except
+    on e:exception do
+    begin
+      Result:=3;
+      WriteLog('Error：'+e.Message);
+    end;
   end;
-  if BusinessType='EDS_0001' then
-  begin
-    if GetAXSalesOrder(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0002' then
-  begin
-    if GetAXSalesOrdLine(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0003' then
-  begin
-    if GetAXSupAgreement(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0004' then
-  begin
-    if GetAXCreLimCust(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0005' then
-  begin
-    if GetAXCreLimCusCont(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0008' then
-  begin
-    if GetAXSalesContract(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0009' then
-  begin
-    if GetAXVehicleNo(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0010' then
-  begin
-    if GetAXSalesContLine(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EPS_0001' then
-  begin
-    if GetAXPurOrder(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EPS_0002' then
-  begin
-    if GetAXPurOrdLine(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDP_0004' then
-  begin
-      Result:=0;
-  end else
-  if BusinessType='EDP_0005' then
-  begin
-      Result:=0;
-  end else
-  if BusinessType='EDB_0003' then
-  begin
-      Result:=0;
-  end else
-  if BusinessType='EDB_0004' then
-  begin
-      Result:=0;
-  end else
-  if BusinessType='EDB_0005' then
-  begin
-      Result:=0;
-  end else
-  if BusinessType='EDB_0006' then
-  begin
-    if GetAXCustomer(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDB_0007' then
-  begin
-      Result:=0;
-  end else
-  if BusinessType='EDB_0008' then
-  begin
-    if GetAXMaterails(XMLPrimaryKey) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  begin
-    Result:=3;
-  end;
-  case Result of
-    0:WriteLog('成功');
-    -1:WriteLog('失败');
-    3:WriteLog('其他错误');
-  end;
-  {if BusinessType='EDS_0001' then
-  begin
-    if CallBusinessCommand(cBC_GetSalesOrder, XMLPrimaryKey, '', @nOut) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0002' then
-  begin
-    if CallBusinessCommand(cBC_GetSalesOrdLine, XMLPrimaryKey, '', @nOut) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0003' then
-  begin
-    if CallBusinessCommand(cBC_GetSupAgreement, XMLPrimaryKey, '', @nOut) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0004' then
-  begin
-    if CallBusinessCommand(cBC_GetCreLimCust, XMLPrimaryKey, '', @nOut) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0005' then
-  begin
-    if CallBusinessCommand(cBC_GetCreLimCusCont, XMLPrimaryKey, '', @nOut) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0008' then
-  begin
-    if CallBusinessCommand(cBC_GetSalesCont, XMLPrimaryKey, '', @nOut) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EDS_0009' then
-  begin
-    if CallBusinessCommand(cBC_GetVehicleNo, XMLPrimaryKey, '', @nOut) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EPS_0001' then
-  begin
-    if CallBusinessCommand(cBC_GetPurOrder, XMLPrimaryKey, '', @nOut) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  if BusinessType='EPS_0002' then
-  begin
-    if CallBusinessCommand(cBC_GetPurOrdLine, XMLPrimaryKey, '', @nOut) then
-      Result:=0
-    else
-      Result:=-1;
-  end else
-  begin
-    Result:=3;
-  end;}
 end;
 
 var

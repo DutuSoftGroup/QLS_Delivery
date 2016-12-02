@@ -36,7 +36,7 @@ uses
   UFramePurchaseOrder, UFormPurchaseOrder, UFormPurchasing,
   UFrameQueryOrderDetail, UFrameOrderCard,  UFrameOrderDetail,
   UFormGetProvider, UFormGetMeterails, UFramePOrderBase, UFormPOrderBase,
-  UFormGetPOrderBase,
+  UFormGetPOrderBase, UFrameDeduct, UFormDeduct, UFormGetNCStock,  
   {.$ENDIF}
   //----------------------------------------------------------------------------
   UFormHYStock, UFormHYData, UFormHYRecord, UFormGetStockNo,
@@ -44,7 +44,8 @@ uses
   UFormWeiXinBindUser, UFormAXBaseLoad, UFormSiteConfirm,
   //by lih 2016-05-26 //2016-07-18
   UFrameUpInfo, UFramePoundWuCha, UFormPWuCha, UFrameZTQuery,
-  UFormPoundKw, UFormWorkSet, UFrameUpPurchase, UFramePoundDevia;
+  UFormPoundKw, UFormWorkSet, UFrameUpPurchase, UFramePoundDevia,
+  UFrameLSCard, UFormLSCard, UFormTransfer, UFrameQueryTransferDetail;
   
 
 
@@ -139,6 +140,9 @@ begin
       if nStr = sFlag_PSanWuChaF then
         gSysParam.FPoundSanF := Fields[0].AsFloat;
 
+      if nStr = sFlag_PEmpTWuCha then
+        gSysParam.FEmpTruckWc := Fields[0].AsFloat;
+        
       Next;
     end;
 

@@ -1,7 +1,7 @@
 inherited fFormBill: TfFormBill
   Left = 384
-  Top = 214
-  ClientHeight = 475
+  Top = 187
+  ClientHeight = 485
   ClientWidth = 447
   Position = poDesktopCenter
   OnClose = FormClose
@@ -10,17 +10,17 @@ inherited fFormBill: TfFormBill
   TextHeight = 12
   inherited dxLayout1: TdxLayoutControl
     Width = 447
-    Height = 475
+    Height = 485
     inherited BtnOK: TButton
       Left = 301
-      Top = 442
+      Top = 452
       Caption = #24320#21333
-      TabOrder = 13
+      TabOrder = 14
     end
     inherited BtnExit: TButton
       Left = 371
-      Top = 442
-      TabOrder = 14
+      Top = 452
+      TabOrder = 15
     end
     object ListInfo: TcxMCListBox [2]
       Left = 23
@@ -43,7 +43,7 @@ inherited fFormBill: TfFormBill
     end
     object ListBill: TcxListView [3]
       Left = 23
-      Top = 315
+      Top = 339
       Width = 372
       Height = 113
       Columns = <
@@ -64,12 +64,12 @@ inherited fFormBill: TfFormBill
       RowSelect = True
       SmallImages = FDM.ImageBar
       Style.Edges = [bLeft, bTop, bRight, bBottom]
-      TabOrder = 11
+      TabOrder = 12
       ViewStyle = vsReport
     end
     object EditValue: TcxTextEdit [4]
       Left = 93
-      Top = 265
+      Top = 264
       ParentFont = False
       Style.BorderColor = clWindowFrame
       Style.BorderStyle = ebsSingle
@@ -84,13 +84,12 @@ inherited fFormBill: TfFormBill
       Style.BorderColor = clWindowFrame
       Style.BorderStyle = ebsSingle
       TabOrder = 2
-      OnExit = EditTruckExit
       OnKeyPress = EditLadingKeyPress
       Width = 116
     end
     object BtnAdd: TButton [6]
       Left = 385
-      Top = 240
+      Top = 239
       Width = 39
       Height = 17
       Caption = #28155#21152
@@ -99,7 +98,7 @@ inherited fFormBill: TfFormBill
     end
     object BtnDel: TButton [7]
       Left = 385
-      Top = 265
+      Top = 264
       Width = 39
       Height = 18
       Caption = #21024#38500
@@ -126,26 +125,21 @@ inherited fFormBill: TfFormBill
     end
     object chkIfHYprint: TcxCheckBox [9]
       Left = 11
-      Top = 442
+      Top = 452
       Caption = #26159#21542#25171#21360#21270#39564#21333
       ParentFont = False
       Style.BorderColor = clWindowFrame
       Style.BorderStyle = ebsSingle
       Style.HotTrack = False
-      TabOrder = 12
-      Transparent = True
+      TabOrder = 13
       Width = 121
     end
     object EditStock: TcxComboBox [10]
       Left = 93
-      Top = 240
+      Top = 239
       ParentFont = False
       Properties.DropDownListStyle = lsEditFixedList
       Properties.OnChange = EditStockPropertiesChange
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      Style.ButtonStyle = btsHotFlat
-      Style.PopupBorderStyle = epbsSingle
       TabOrder = 4
       Width = 283
     end
@@ -153,44 +147,41 @@ inherited fFormBill: TfFormBill
       Left = 93
       Top = 182
       ParentFont = False
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
       TabOrder = 3
       Width = 121
     end
-    object EditSampleID: TcxComboBox [12]
+    object cbxSampleID: TcxComboBox [12]
       Left = 277
-      Top = 290
+      Top = 289
       ParentFont = False
       Properties.DropDownListStyle = lsFixedList
-      Properties.OnEditValueChanged = EditSampleIDPropertiesEditValueChanged
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      Style.ButtonStyle = btsHotFlat
-      Style.PopupBorderStyle = epbsSingle
+      Properties.OnChange = cbxSampleIDPropertiesChange
       TabOrder = 9
       Width = 103
     end
-    object EditCenterID: TcxComboBox [13]
+    object cbxCenterID: TcxComboBox [13]
       Left = 93
-      Top = 290
+      Top = 289
       ParentFont = False
       Properties.DropDownListStyle = lsFixedList
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      Style.ButtonStyle = btsHotFlat
-      Style.PopupBorderStyle = epbsSingle
+      Properties.OnEditValueChanged = cbxCenterIDPropertiesEditValueChanged
       TabOrder = 8
       Width = 121
     end
-    object SumSap: TcxLabel [14]
+    object cxLabel1: TcxLabel [14]
       Left = 385
-      Top = 290
+      Top = 289
       AutoSize = False
       ParentFont = False
-      Transparent = True
       Height = 16
       Width = 39
+    end
+    object cbxKw: TcxComboBox [15]
+      Left = 93
+      Top = 314
+      ParentFont = False
+      TabOrder = 11
+      Width = 300
     end
     inherited dxLayout1Group_Root: TdxLayoutGroup
       inherited dxGroup1: TdxLayoutGroup
@@ -199,68 +190,68 @@ inherited fFormBill: TfFormBill
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Group2: TdxLayoutGroup
-          CaptionOptions.Visible = False
-          ButtonOptions.Buttons = <>
+          ShowCaption = False
           Hidden = True
           LayoutDirection = ldHorizontal
           ShowBorder = False
           object dxLayout1Item12: TdxLayoutItem
-            CaptionOptions.Text = #25552#36135#26041#24335':'
+            Caption = #25552#36135#26041#24335':'
             Control = EditLading
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item9: TdxLayoutItem
+            AutoAligns = [aaVertical]
             AlignHorz = ahClient
-            CaptionOptions.Text = #25552#36135#36710#36742':'
+            Caption = #25552#36135#36710#36742':'
             Control = EditTruck
             ControlOptions.ShowBorder = False
           end
         end
         object dxLayout1Item6: TdxLayoutItem
-          CaptionOptions.Text = #25552#21333#21495'('#32463'):'
+          Caption = #25552#21333#21495'('#32463'):'
           Control = EditJXSTHD
           ControlOptions.ShowBorder = False
         end
       end
       object dxGroup2: TdxLayoutGroup [1]
+        AutoAligns = [aaHorizontal]
         AlignVert = avClient
-        CaptionOptions.Text = #25552#21333#26126#32454
-        ButtonOptions.Buttons = <>
+        Caption = #25552#21333#26126#32454
         object dxLayout1Group5: TdxLayoutGroup
-          CaptionOptions.Visible = False
-          ButtonOptions.Buttons = <>
+          ShowCaption = False
           Hidden = True
           ShowBorder = False
           object dxLayout1Group8: TdxLayoutGroup
-            CaptionOptions.Visible = False
-            ButtonOptions.Buttons = <>
+            ShowCaption = False
             Hidden = True
             LayoutDirection = ldHorizontal
             ShowBorder = False
             object dxLayout1Item7: TdxLayoutItem
-              CaptionOptions.Text = #27700#27877#31867#22411':'
+              Caption = #27700#27877#31867#22411':'
               Control = EditStock
               ControlOptions.ShowBorder = False
             end
             object dxLayout1Item10: TdxLayoutItem
+              AutoAligns = [aaVertical]
               AlignHorz = ahRight
               Control = BtnAdd
               ControlOptions.ShowBorder = False
             end
           end
           object dxLayout1Group7: TdxLayoutGroup
-            CaptionOptions.Visible = False
-            ButtonOptions.Buttons = <>
+            ShowCaption = False
             Hidden = True
             LayoutDirection = ldHorizontal
             ShowBorder = False
             object dxLayout1Item8: TdxLayoutItem
+              AutoAligns = [aaVertical]
               AlignHorz = ahClient
-              CaptionOptions.Text = #21150#29702#21544#25968':'
+              Caption = #21150#29702#21544#25968':'
               Control = EditValue
               ControlOptions.ShowBorder = False
             end
             object dxLayout1Item11: TdxLayoutItem
+              AutoAligns = [aaVertical]
               AlignHorz = ahRight
               Control = BtnDel
               ControlOptions.ShowBorder = False
@@ -268,29 +259,34 @@ inherited fFormBill: TfFormBill
           end
         end
         object dxLayout1Group3: TdxLayoutGroup
-          CaptionOptions.Visible = False
-          ButtonOptions.Buttons = <>
+          ShowCaption = False
           Hidden = True
           LayoutDirection = ldHorizontal
           ShowBorder = False
           object dxLayout1Item14: TdxLayoutItem
-            CaptionOptions.Text = #29983' '#20135' '#32447':'
-            Control = EditCenterID
+            Caption = #29983' '#20135' '#32447':'
+            Control = cbxCenterID
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item5: TdxLayoutItem
-            CaptionOptions.Text = #35797#26679#32534#21495':'
-            Control = EditSampleID
+            Caption = #35797#26679#32534#21495':'
+            Control = cbxSampleID
             ControlOptions.ShowBorder = False
           end
           object dxLayout1Item15: TdxLayoutItem
-            CaptionOptions.Text = 'cxLabel1'
-            CaptionOptions.Visible = False
-            Control = SumSap
+            Caption = 'cxLabel1'
+            ShowCaption = False
+            Control = cxLabel1
             ControlOptions.ShowBorder = False
           end
         end
+        object dxLayout1Item16: TdxLayoutItem
+          Caption = #24211'    '#20301':'
+          Control = cbxKw
+          ControlOptions.ShowBorder = False
+        end
         object dxLayout1Item4: TdxLayoutItem
+          AutoAligns = [aaHorizontal]
           AlignVert = avClient
           Control = ListBill
           ControlOptions.ShowBorder = False

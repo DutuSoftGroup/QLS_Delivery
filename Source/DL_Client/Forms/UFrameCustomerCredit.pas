@@ -14,7 +14,7 @@ uses
   cxTextEdit, cxMaskEdit, cxButtonEdit, ADODB, cxLabel, UBitmapPanel,
   cxSplitter, cxGridLevel, cxClasses, cxGridCustomView,
   cxGridCustomTableView, cxGridTableView, cxGridDBTableView, cxGrid,
-  ComCtrls, ToolWin, dxLayoutcxEditAdapters;
+  ComCtrls, ToolWin, cxCheckBox;
 
 type
   TfFrameCustomerCredit = class(TfFrameNormal)
@@ -36,6 +36,8 @@ type
     cxLevel2: TcxGridLevel;
     dxLayout1Item6: TdxLayoutItem;
     EditDate: TcxButtonEdit;
+    chkZKZY: TcxCheckBox;
+    dxLayout1Item8: TdxLayoutItem;
     procedure EditIDPropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
     procedure BtnRefreshClick(Sender: TObject);
@@ -46,6 +48,7 @@ type
     procedure cxView1DblClick(Sender: TObject);
     procedure EditDatePropertiesButtonClick(Sender: TObject;
       AButtonIndex: Integer);
+    procedure chkZKZYClick(Sender: TObject);
   protected
     FStart,FEnd: TDate;
     //时间区间
@@ -109,18 +112,13 @@ begin
   nDefault := False;
   //user define
 
-//  nSQL := 'Select cus.*,ca.* From $Cus cus ' +
-//          ' Left Join $CA ca On ca.A_CID=cus.C_ID ' +
-//          'Where (A_CreditLimit >= 0)';
-
-  nSQL := 'Select cus.*,ca.*,credit.C_CashBalance From $Cus cus'+
-          ' Left Join $CA ca On ca.A_CID=cus.C_ID'+
-          ' left join $Crdeit credit on cus.C_id=credit.C_CusID'+
-          ' Where (ca.A_CreditLimit >= 0)';
+  nSQL := 'Select cus.*,ca.* From $Cus cus ' +
+          ' Left Join $CA ca On ca.A_CID=cus.C_ID ' +
+          'Where (A_CreditLimit >= 0)';
   //xxxxx
-
+  
   nSQL := MacroValue(nSQL, [MI('$Cus', sTable_Customer),
-          MI('$CA', sTable_CusAccount),MI('$Crdeit',sTable_CusCredit)]);
+          MI('$CA', sTable_CusAccount)]);
   //xxxxx
   
   if FWhere <> '' then
@@ -137,10 +135,18 @@ var nStr: string;
 begin
   EditDate.Text := Format('%s 至 %s', [Date2Str(FStart), Date2Str(FEnd)]);
 
-  nStr := 'Select cc.*,C_Name,C_MaCredLmt From %s cc ' +
-          ' Left Join %s cus On cus.C_ID=cc.C_CusID';
-  nStr := Format(nStr, [sTable_CusCredit, sTable_Customer]);
-
+  if chkZKZY.Checked then
+  begin
+    nStr := 'Select cc.*,C_Name,C_MaCredLmt From %s cc ' +
+            ' Left Join %s cus On cus.C_ID=cc.C_CusID';
+    nStr := Format(nStr, [sTable_CusContCredit, sTable_Customer]);
+  end else
+  begin
+    nStr := 'Select cc.*,C_Name,C_MaCredLmt From %s cc ' +
+            ' Left Join %s cus On cus.C_ID=cc.C_CusID';
+    nStr := Format(nStr, [sTable_CusCredit, sTable_Customer]);
+  end;
+  
   if nWhere = '' then
        nStr := nStr + ' Where (C_Date>=''$ST'' and C_Date <''$End'')'
   else nStr := nStr + ' Where (' + nWhere + ')';
@@ -231,6 +237,11 @@ procedure TfFrameCustomerCredit.EditDatePropertiesButtonClick(
   Sender: TObject; AButtonIndex: Integer);
 begin
   if ShowDateFilterForm(FStart, FEnd) then QueryDetail('');
+end;
+
+procedure TfFrameCustomerCredit.chkZKZYClick(Sender: TObject);
+begin
+  QueryDetail('');
 end;
 
 initialization

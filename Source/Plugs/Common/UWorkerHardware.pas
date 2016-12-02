@@ -651,12 +651,16 @@ begin
     nFID:=gHardwareHelper.GetReaderLastOn(FIn.FData,nExtFID);
     if FIn.FExtParam='0' then
     begin
+      nFID:=StringReplace(nFID,'V','1',[rfReplaceAll]);
       gHYReaderManager.OpenDoor(nFID);
       nData := Format('OpenPoundDoor -> %s:%s', [nFID, FIn.FExtParam]);
     end else
     begin
       if nExtFID<>'' then
+      begin
+        nExtFID:=StringReplace(nExtFID,'V','1',[rfReplaceAll]);
         gHYReaderManager.OpenDoor(nExtFID);
+      end;
       nData := Format('OpenPoundDoor -> %s:%s', [nExtFID, FIn.FExtParam]);
     end;
     Result:=True;

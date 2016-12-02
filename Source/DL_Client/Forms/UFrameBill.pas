@@ -301,28 +301,28 @@ var nStr,nID,nSeal: string;
 begin
   if cxView1.DataController.GetSelectedCount > 0 then
   begin
-    nStr := SQLQuery.FieldByName('L_Seal').AsString;
+    nStr := SQLQuery.FieldByName('L_HYDan').AsString;
     nSeal := nStr;
-    if not ShowInputBox('请输入新的封签编号:', '修改', nSeal, 100) then Exit;
+    if not ShowInputBox('请输入新的试样编号:', '修改', nSeal, 100) then Exit;
 
     if (nSeal = '') or (nStr = nSeal) then Exit;
     //无效或一致
     nID := SQLQuery.FieldByName('L_ID').AsString;
 
-    nStr := '确定要将交货单[ %s ]的封签号该为[ %s ]吗?';
+    nStr := '确定要将交货单[ %s ]的试样编号该为[ %s ]吗?';
     nStr := Format(nStr, [nID, nSeal]);
     if not QueryDlg(nStr, sAsk) then Exit;
 
-    nStr := 'Update %s Set L_Seal=''%s'' Where L_ID=''%s''';
+    nStr := 'Update %s Set L_HYDan=''%s'' Where L_ID=''%s''';
     nStr := Format(nStr, [sTable_Bill, nSeal, nID]);
     FDM.ExecuteSQL(nStr);
 
-    nStr := '修改封签号[ %s -> %s ].';
-    nStr := Format(nStr, [SQLQuery.FieldByName('L_Seal').AsString, nSeal]);
+    nStr := '修改试样编号[ %s -> %s ].';
+    nStr := Format(nStr, [SQLQuery.FieldByName('L_HYDan').AsString, nSeal]);
     FDM.WriteSysLog(sFlag_BillItem, nID, nStr, False);
 
     InitFormData(FWhere);
-    ShowMsg('封签号修改成功', sHint);
+    ShowMsg('试样编号修改成功', sHint);
   end;
 end;
 

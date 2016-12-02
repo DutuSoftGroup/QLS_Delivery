@@ -52,8 +52,8 @@ implementation
 
 function GetBPM2ERPServiceSoap(UseWSDL: Boolean; Addr: string; HTTPRIO: THTTPRIO): BPM2ERPServiceSoap;
 const
-  defWSDL = 'http://192.168.252.50/BPMTOERP/BPM2ERPService.asmx?wsdl';
-  defURL  = 'http://192.168.252.50/BPMTOERP/BPM2ERPService.asmx';
+  defWSDL = 'http://192.168.0.21/BPMTOERP/BPM2ERPService.asmx?wsdl';
+  defURL  = 'http://192.168.0.21/BPMTOERP/BPM2ERPService.asmx';
   defSvc  = 'BPM2ERPService';
   defPrt  = 'BPM2ERPServiceSoap';
 var

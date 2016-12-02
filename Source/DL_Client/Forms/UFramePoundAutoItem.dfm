@@ -2,6 +2,7 @@ inherited fFrameAutoPoundItem: TfFrameAutoPoundItem
   Width = 1075
   Height = 309
   Font.Height = -15
+  PopupMenu = PMclose
   object GroupBox1: TGroupBox
     Left = 8
     Top = 44
@@ -464,7 +465,7 @@ inherited fFrameAutoPoundItem: TfFrameAutoPoundItem
   object cxLabel2: TcxLabel
     Left = 385
     Top = 211
-    Caption = #20132#36135#21333#21495':'
+    Caption = #31216#37325#31867#22411':'
     ParentFont = False
     Style.Font.Charset = GB2312_CHARSET
     Style.Font.Color = clBlack
@@ -666,5 +667,13 @@ inherited fFrameAutoPoundItem: TfFrameAutoPoundItem
     OnTimer = Timer_SaveDoneTimer
     Left = 588
     Top = 256
+  end
+  object PMclose: TPopupMenu
+    Left = 1024
+    Top = 256
+    object N1: TMenuItem
+      Caption = #20851#38381#36890#36947
+      OnClick = N1Click
+    end
   end
 end

@@ -77,6 +77,10 @@ const
 
   cFI_FrameWXAccount    = $0110;                     //微信账户
   cFI_FrameWXSendLog    = $0111;                     //发送日志
+  cFI_FrameDeduct       = $0112;                     //暗扣规则
+
+  cFI_FrameLSCard       = $0113;                     //临时卡办理查询
+  cFI_FormLSCard        = $0114;                     //临时卡办理
 
   cFI_FormMemo          = $1000;                     //备注窗口
   cFI_FormBackup        = $1001;                     //数据备份
@@ -132,7 +136,9 @@ const
   cFI_FormOrder         = $1053;                     //采购订单
   cFI_FormOrderBase     = $1054;                     //采购订单
   cFI_FormPurchase      = $1055;                     //采购验收
-  cFI_FormGetPOrderBase  = $1056;                     //采购订单
+  cFI_FormGetPOrderBase = $1056;                     //采购订单
+  cFI_FormDeduct        = $1057;                     //暗扣规则
+  cFI_FormGetNCStock    = $1058;                     //选择物料
 
   cFI_FormStockParam    = $1065;                     //品种管理
   cFI_FormStockHuaYan   = $1066;                     //开化验单
@@ -167,6 +173,8 @@ const
   cFI_FormWorkSet       = $1101;                     //班别设置
   cFI_FrameUpPurchase   = $1102;                     //采购上传信息
   cFI_FramePoundDevia   = $1103;                     //称重误差查询
+  cFI_FrameTransferDetailQuery = $1104;              //短倒查询
+  cFI_FormTransfer      = $1105;                     //短倒制卡
 
   {*Command*}
   cCmd_RefreshData      = $0002;                     //刷新数据
@@ -217,7 +225,8 @@ type
     FPicBase    : Integer;                           //图片索引
     FPicPath    : string;                            //图片目录
     FVoiceUser  : Integer;                           //语音计数
-    FProberUser : Integer;                           //检测器技术 
+    FProberUser : Integer;                           //检测器技术
+    FEmpTruckWc : Double;                            //空车出厂误差
   end;
   //系统参数
 
@@ -372,6 +381,8 @@ begin
   AddMenuModuleItem('MAIN_M04', cFI_FrameOrder);
   AddMenuModuleItem('MAIN_M08', cFI_FrameOrderDetail);
   AddMenuModuleItem('MAIN_M09', cFI_FrameOrderBase);
+  AddMenuModuleItem('MAIN_M10', cFI_FrameDeduct);
+  AddMenuModuleItem('MAIN_M11', cFI_FrameLSCard);
 
   AddMenuModuleItem('MAIN_W01', cFI_FrameWXAccount);
   AddMenuModuleItem('MAIN_W02', cFI_FrameWXSendLog);
@@ -380,6 +391,7 @@ begin
   AddMenuModuleItem('MAIN_S01', cFI_FormAXBaseLoad,mtForm);
   AddMenuModuleItem('MAIN_S02', cFI_FrameUpInfo);
   AddMenuModuleItem('MAIN_S03', cFI_FrameUpPurchase);
+
 end;
 
 //Desc: 清理模块列表

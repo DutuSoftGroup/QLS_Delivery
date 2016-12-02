@@ -1,6 +1,6 @@
-object fFormDateFilter: TfFormDateFilter
-  Left = 361
-  Top = 321
+object fFormTimeFilter: TfFormTimeFilter
+  Left = 704
+  Top = 313
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   ClientHeight = 153
@@ -45,6 +45,7 @@ object fFormDateFilter: TfFormDateFilter
     object ItemID: TcxButtonEdit
       Left = 81
       Top = 36
+      ParentFont = False
       Properties.Buttons = <
         item
           Default = True
@@ -56,14 +57,16 @@ object fFormDateFilter: TfFormDateFilter
     object EditStart: TcxTimeEdit
       Left = 81
       Top = 61
-      EditValue = 0
+      EditValue = 0d
+      ParentFont = False
       TabOrder = 1
       Width = 121
     end
     object EditEnd: TcxTimeEdit
       Left = 81
       Top = 86
-      EditValue = 0
+      EditValue = 0d
+      ParentFont = False
       TabOrder = 2
       Width = 121
     end

@@ -58,9 +58,6 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
           Kind = bkEllipsis
         end>
       Properties.OnButtonClick = EditIDPropertiesButtonClick
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      Style.ButtonStyle = btsHotFlat
       TabOrder = 0
       OnKeyPress = OnCtrlKeyPress
       Width = 105
@@ -75,50 +72,39 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
           Kind = bkEllipsis
         end>
       Properties.OnButtonClick = EditIDPropertiesButtonClick
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      Style.ButtonStyle = btsHotFlat
       TabOrder = 1
       OnKeyPress = OnCtrlKeyPress
       Width = 120
     end
     object EditCusID: TcxTextEdit [2]
       Left = 81
-      Top = 93
+      Top = 94
       Hint = 'T.C_ID'
       ParentFont = False
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      TabOrder = 3
+      TabOrder = 4
       Width = 105
     end
     object EditCusName: TcxTextEdit [3]
       Left = 249
-      Top = 93
+      Top = 94
       Hint = 'T.C_Name'
       ParentFont = False
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      TabOrder = 4
+      TabOrder = 5
       Width = 120
     end
     object EditMoney: TcxTextEdit [4]
       Left = 456
-      Top = 93
+      Top = 94
       Hint = 'T.A_CreditLimit'
       ParentFont = False
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      TabOrder = 5
+      TabOrder = 6
       Width = 74
     end
     object EditMemo: TcxTextEdit [5]
       Left = 593
-      Top = 93
+      Top = 94
       ParentFont = False
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      TabOrder = 6
+      TabOrder = 7
       Width = 121
     end
     object EditDate: TcxButtonEdit [6]
@@ -131,49 +117,62 @@ inherited fFrameCustomerCredit: TfFrameCustomerCredit
           Kind = bkEllipsis
         end>
       Properties.OnButtonClick = EditDatePropertiesButtonClick
-      Style.BorderColor = clWindowFrame
-      Style.BorderStyle = ebsSingle
-      Style.ButtonStyle = btsHotFlat
       TabOrder = 2
       Width = 176
+    end
+    object chkZKZY: TcxCheckBox [7]
+      Left = 613
+      Top = 36
+      Caption = #19987#27454#19987#29992
+      ParentFont = False
+      TabOrder = 3
+      OnClick = chkZKZYClick
+      Width = 121
     end
     inherited dxGroup1: TdxLayoutGroup
       inherited GroupSearch1: TdxLayoutGroup
         object dxLayout1Item1: TdxLayoutItem
-          CaptionOptions.Text = #23458#25143#32534#21495':'
+          Caption = #23458#25143#32534#21495':'
           Control = EditID
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item2: TdxLayoutItem
-          CaptionOptions.Text = #23458#25143#21517#31216':'
+          Caption = #23458#25143#21517#31216':'
           Control = EditName
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item6: TdxLayoutItem
-          CaptionOptions.Text = #26085#26399#31579#36873':'
+          Caption = #26085#26399#31579#36873':'
           Control = EditDate
+          ControlOptions.ShowBorder = False
+        end
+        object dxLayout1Item8: TdxLayoutItem
+          Caption = 'cxCheckBox1'
+          ShowCaption = False
+          Control = chkZKZY
           ControlOptions.ShowBorder = False
         end
       end
       inherited GroupDetail1: TdxLayoutGroup
         object dxLayout1Item3: TdxLayoutItem
-          CaptionOptions.Text = #23458#25143#32534#21495':'
+          Caption = #23458#25143#32534#21495':'
           Control = EditCusID
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item4: TdxLayoutItem
-          CaptionOptions.Text = #23458#25143#21517#31216':'
+          Caption = #23458#25143#21517#31216':'
           Control = EditCusName
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item5: TdxLayoutItem
-          CaptionOptions.Text = #20449#29992#37329#39069'('#20803'):'
+          Caption = #20449#29992#37329#39069'('#20803'):'
           Control = EditMoney
           ControlOptions.ShowBorder = False
         end
         object dxLayout1Item7: TdxLayoutItem
+          AutoAligns = [aaVertical]
           AlignHorz = ahClient
-          CaptionOptions.Text = #22791#27880#20449#24687':'
+          Caption = #22791#27880#20449#24687':'
           Control = EditMemo
           ControlOptions.ShowBorder = False
         end

@@ -42,13 +42,15 @@ type
     dxLayout1Item7: TdxLayoutItem;
     EditJXSTHD: TcxTextEdit;
     dxLayout1Item6: TdxLayoutItem;
-    EditSampleID: TcxComboBox;
+    cbxSampleID: TcxComboBox;
     dxLayout1Item5: TdxLayoutItem;
-    EditCenterID: TcxComboBox;
+    cbxCenterID: TcxComboBox;
     dxLayout1Item14: TdxLayoutItem;
     dxLayout1Group3: TdxLayoutGroup;
-    SumSap: TcxLabel;
+    cxLabel1: TcxLabel;
     dxLayout1Item15: TdxLayoutItem;
+    cbxKw: TcxComboBox;
+    dxLayout1Item16: TdxLayoutItem;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure EditStockPropertiesChange(Sender: TObject);
@@ -56,11 +58,8 @@ type
     procedure BtnDelClick(Sender: TObject);
     procedure BtnOKClick(Sender: TObject);
     procedure EditLadingKeyPress(Sender: TObject; var Key: Char);
-    procedure EditSampleIDPropertiesEditValueChanged(Sender: TObject);
-
-    //查询此车是否有未完成的采购订单
-    function GetUnfinishedSupplyOrder(const nTruckno:string):boolean;
-    procedure EditTruckExit(Sender: TObject);
+    procedure cbxSampleIDPropertiesChange(Sender: TObject);
+    procedure cbxCenterIDPropertiesEditValueChanged(Sender: TObject);
   protected
     { Protected declarations }
     FBuDanFlag: string;
@@ -81,7 +80,7 @@ implementation
 {$R *.dfm}
 uses
   ULibFun, DB, IniFiles, UMgrControl, UAdjustForm, UFormBase, UBusinessPacker,
-  UDataModule, USysPopedom, USysBusiness, USysDB, USysGrid, USysConst,USysLoger;
+  UDataModule, USysPopedom, USysBusiness, USysDB, USysGrid, USysConst;
 
 type
   TCommonInfo = record
@@ -91,6 +90,7 @@ type
     FOnlyMoney: Boolean;
     FIDList: string;
     FShowPrice: Boolean;
+    FPriceChanged: Boolean;
     FSalesType: string;  //订单类型（0：记账日志 1报价 2预定3销售订单 4退回物料 5总订单 6物料需求）
   end;
 
@@ -109,6 +109,7 @@ var
   gInfo: TCommonInfo;
   gStockList: array of TStockItem;
   gSelect:Integer;
+  gStockName,gType:string;
   //全局使用
 
 class function TfFormBill.CreateForm(const nPopedom: string;
@@ -139,9 +140,15 @@ begin
     {$IFDEF YDKP}
     dxLayout1Item5.Enabled:=True;
     dxLayout1Item5.Visible:=True;
+    dxLayout1Item16.Enabled:=True;
+    dxLayout1Item16.Visible:=True;
+    cxLabel1.Visible:=True;
     {$ELSE}
     dxLayout1Item5.Enabled:=False;
     dxLayout1Item5.Visible:=False;
+    dxLayout1Item16.Enabled:=False;
+    dxLayout1Item16.Visible:=False;
+    cxLabel1.Visible:=False;
     {$ENDIF}
     LoadFormData;
     //try load data
@@ -178,10 +185,16 @@ begin
 end;
 
 procedure TfFormBill.FormCreate(Sender: TObject);
-var nIni: TIniFile;
+var nStr: string;
+    nIni,myini: TIniFile;
 begin
   nIni := TIniFile.Create(gPath + sFormConfig);
   try
+    {nStr := nIni.ReadString(Name, 'FQLabel', '');
+    if nStr <> '' then
+      dxLayout1Item5.Caption := nStr; }
+    //xxxxx
+
     LoadMCListBoxConfig(Name, ListInfo, nIni);
     LoadcxListViewConfig(Name, ListBill, nIni);
   finally
@@ -212,7 +225,6 @@ begin
   if Key = Char(VK_RETURN) then
   begin
     Key := #0;
-    if GetUnfinishedSupplyOrder(EditTruck.Text) then Exit;
 
     if Sender = EditStock then ActiveControl := EditValue else
     if Sender = EditValue then ActiveControl := BtnAdd else
@@ -238,9 +250,10 @@ end;
 //------------------------------------------------------------------------------
 //Desc: 载入界面数据
 procedure TfFormBill.LoadFormData;
-var nStr: string;
+var nStr,nTmp: string;
     nDB: TDataSet;
     i,nIdx: integer;
+    nZcid: string;//合同编号
     nNewPrice: Double;
 begin
   BtnOK.Enabled := False;
@@ -250,6 +263,8 @@ begin
   with gInfo do
   begin
     FCusID := nDB.FieldByName('Z_Customer').AsString;
+    FPriceChanged := nDB.FieldByName('Z_TJStatus').AsString = sFlag_TJOver;
+
     SetCtrlData(EditLading, nDB.FieldByName('Z_Lading').AsString);
     FSalesType:=nDB.fieldByName('Z_SalesType').AsString; //0:记账日志类型不校验信用额度
     //FMoney := GetZhikaValidMoney(gInfo.FZhiKa, gInfo.FOnlyMoney);
@@ -257,11 +272,10 @@ begin
   begin
     ShowMsg(nStr, sHint); Exit;
   end;
-
   {if gInfo.FSalesType <> '0' then
     BtnOK.Enabled := IsCustomerCreditValid(gInfo.FCusID)
   else}
-  BtnOK.Enabled := True;
+    BtnOK.Enabled := True;
   if not BtnOK.Enabled then Exit;
   //to verify credit
 
@@ -288,9 +302,16 @@ begin
       else
         FStockName := FieldByName('D_StockName').AsString+'散装';
       FPrice := FieldByName('D_Price').AsFloat;
-      FValue := Float2Float(FieldByName('D_Value').AsFloat, cPrecision, False);
+        //FValue := 0;
+      FValue:= FieldByName('D_Value').AsFloat;
       FSelecte := False;
       FRecID := FieldByName('D_RECID').AsString;
+      {if gInfo.FPriceChanged then
+      begin
+        nTmp := '品种:[ %-8s ] 原价:[ %.2f ] 现价:[ %.2f ]' + #32#32;
+        nTmp := Format(nTmp, [FStockName, FieldByName('D_PPrice').AsFloat, FPrice]);
+        nStr := nStr + nTmp + #13#10;
+      end;}
 
       Inc(nIdx);
       Next;
@@ -306,6 +327,21 @@ begin
     ShowDlg(nStr, sHint);
     BtnOK.Enabled := False; Exit;
   end;
+
+  {if gInfo.FPriceChanged then
+  begin
+    nStr := '管理员已调整纸卡[ %s ]的价格,明细如下: ' + #13#10#13#10 +
+            AdjustHintToRead(nStr) + #13#10 +
+            '请询问客户是否接受新单价,接受点"是"按钮.' ;
+    nStr := Format(nStr, [gInfo.FZhiKa]);
+
+    BtnOK.Enabled := QueryDlg(nStr, sHint);
+    if not BtnOK.Enabled then Exit;
+
+    nStr := 'Update %s Set Z_TJStatus=Null Where Z_ID=''%s''';
+    nStr := Format(nStr, [sTable_ZhiKa, gInfo.FZhiKa]);
+    FDM.ExecuteSQL(nStr);
+  end; }
 
   LoadStockList;
   //load stock into window
@@ -355,31 +391,22 @@ end;
 
 //Dessc: 选择品种
 procedure TfFormBill.EditStockPropertiesChange(Sender: TObject);
+var nInt: Int64;
 begin
   dxGroup2.Caption := '提单明细';
   if EditStock.ItemIndex < 0 then Exit;
 
   with gStockList[StrToInt(GetCtrlData(EditStock))] do
+  if FPrice > 0 then
   begin
-    {$IFDEF YDKP}
-    InitSampleID(FStockNO,FType,EditSampleID);
-    //加载试样编号
-    {$ENDIF}
+    //nInt := Float2PInt(gInfo.FMoney / FPrice, cPrecision, False);
+    nInt := Float2PInt(FValue, cPrecision, False);
+    EditValue.Text := FloatToStr(nInt / cPrecision);
 
-    InitCenter(FStockNO,FType,EditCenterID);
-    //加载仓库编号
-
-    if FPrice > 0 then
-    begin
-      EditValue.Text := FloatToStr(FValue);
-
-      if gInfo.FShowPrice then
-        dxGroup2.Caption := Format('提单明细 单价:%.2f元/吨', [FPrice]);
-      //xxxxx
-    end;
-
-    SumSap.Caption:= '0.00';
-  end;  
+    if gInfo.FShowPrice then
+      dxGroup2.Caption := Format('提单明细 单价:%.2f元/吨', [FPrice]);
+    //xxxxx
+  end;
 end;
 
 function TfFormBill.OnVerifyCtrl(Sender: TObject; var nHint: string): Boolean;
@@ -418,11 +445,13 @@ begin
     begin
       nVal := StrToFloat(EditValue.Text);
       nVal := Float2Float(nVal, cPrecision, False);
+      //Result := FloatRelation(gInfo.FMoney / FPrice, nVal, rtGE, cPrecision);
       Result := FloatRelation(FValue, nVal, rtGE, cPrecision);
 
       nHint := '已超出可办理量';
       if not Result then Exit;
 
+      //if FloatRelation(gInfo.FMoney / FPrice, nVal, rtEqual, cPrecision) then
       if FloatRelation(FValue, nVal, rtEqual, cPrecision) then
       begin
         nHint := '';
@@ -440,6 +469,8 @@ end;
 //Desc: 添加
 procedure TfFormBill.BtnAddClick(Sender: TObject);
 var nIdx: Integer;
+    nSampleDate: string;
+    nLocationID: string;
 begin
   if IsDataValid then
   begin
@@ -452,20 +483,29 @@ begin
         ActiveControl := EditStock;
         Exit;
       end;
-
-      if (not LoadNoSampleID(FStockNO + FType)) and (Trim(EditSampleID.Text) = '') then
-      begin
-        ShowMsg('请选择试样编号！',sHint);
-        Exit;
-      end;
-
       FValue := StrToFloat(EditValue.Text);
       FValue := Float2Float(FValue, cPrecision, False);
-
-
+      InitCenter(FStockNO,FType,cbxCenterID);
+      {$IFDEF YDKP}
+      gStockName:=FStockName;
+      gType:=FType;
+      //InitSampleID(FStockName,FType,cbxCenterID.Text,cbxSampleID);
+      if pos('熟',FStockName)>0 then
+      begin
+        InitKuWei('熟料',cbxKw);
+      end else
+      if pos('袋',FStockName)>0 then
+      begin
+        InitKuWei('袋装',cbxKw);
+      end else
+      begin
+        InitKuWei('散装',cbxKw);
+      end;
+      {$ENDIF}
       FSelecte := True;
-      FSampleID:=EditSampleID.Text;
+
       EditTruck.Properties.ReadOnly := True;
+      //gInfo.FMoney := gInfo.FMoney - FPrice * FValue;
     end;
 
     LoadStockList;
@@ -488,8 +528,8 @@ begin
 
     LoadStockList;
     EditTruck.Properties.ReadOnly := ListBill.Items.Count > 0;
-    EditCenterID.ItemIndex:=-1;
-    EditSampleID.ItemIndex:=-1;
+    cbxCenterID.ItemIndex:=-1;
+    cbxSampleID.ItemIndex:=-1;
   end;
 end;
 
@@ -501,29 +541,33 @@ var nIdx: Integer;
     nPos: Integer;
     nPlanW,nBatQuaS,nBatQuaE:Double;
     FSumTon:Double;
-    nStr:string;
+    nStr,nCenterYL,nStockNo,nCenterID:string;
+    nYL:Double;
 begin
+  FSumTon:=0.00;
   if ListBill.Items.Count < 1 then
   begin
     ShowMsg('请先办理提货单', sHint); Exit;
   end;
-  if EditCenterID.ItemIndex < 0 then
+  if cbxCenterID.ItemIndex=-1 then
   begin
     ShowMsg('请选择生产线', sHint); Exit;
+  end;
+  nPos:=Pos('.',cbxCenterID.Text);
+  if nPos>0 then
+    nCenterID:=Copy(cbxCenterID.Text,1,nPos-1)
+  else begin
+    ShowMsg('生产线格式非法', sHint); Exit;
   end;
   if Trim(EditJXSTHD.Text) = '' then
   begin
     ShowMsg('请录入经销商提货单号', sHint); Exit;
   end;
-
-  {
   if not CheckTruckOK(Trim(EditTruck.Text)) then
   begin
     ShowMsg(Trim(EditTruck.Text)+'车辆禁止开单',sHint);
     Exit;
   end;
-  }
-  //强制车辆刚出场不允许开单
 
   nStocks := TStringList.Create;
   nList := TStringList.Create;
@@ -545,23 +589,36 @@ begin
       Values['Price'] := FloatToStr(FPrice);
       Values['Value'] := FloatToStr(FValue);
       Values['RECID'] := FRecID;
-
-      if not LoadNoSampleID(FStockNO + FType) then
+      {$IFDEF YDKP}//开票录入试样编号
+      if cbxSampleID.Enabled=True then
       begin
-        if FSampleID = '' then
+        if LoadNoSampleID(FStockNO) then
         begin
-          ShowMsg('试样编号不能为空', sHint);
-          Exit;
+          FSampleID:='';
+        end else
+        begin
+          if cbxSampleID.ItemIndex < 0 then
+          begin
+            ShowMsg('请选择试样编号！',sHint);
+            Exit;
+          end;
+          FSampleID:=cbxSampleID.Text;
         end;
-
+      end else
+      begin
+        FSampleID:='';
+      end;
+      if FSampleID <> '' then
+      begin
         FSumTon:=GetSumTonnage(FSampleID);
+        cxLabel1.Caption:=Floattostr(FSumTon);
         if GetSampleTonnage(FSampleID, nBatQuaS, nBatQuaE) then
         begin
           if FSumTon-nBatQuaS>0 then
           begin
             ShowMsg('试样编号['+FSampleID+']已超量',sHint);
             if UpdateSampleValid(FSampleID) then
-              InitSampleID(FStockNO,FType,EditSampleID);
+              InitSampleID(FStockName,FType,nCenterID,cbxSampleID);
             Exit;
           end;
 
@@ -569,8 +626,13 @@ begin
           FSumTon:=FSumTon+nPlanW;
           if nBatQuaS-FSumTon<=nBatQuaE then    //到预警量
           begin
-            nStr:='试样编号['+FSampleID+']已到预警量,请通知化验室更换';
-            ShowDlg(nStr, sWarn);
+            nStr:='试样编号['+FSampleID+']已到预警量,是否继续保存？';
+            if not QueryDlg(nStr, sAsk) then
+            begin
+              {if UpdateSampleValid(cbxSampleID.Text) then
+                GetSampleID(EditStockName.Text,EditType.Text); }
+              Exit;
+            end;
           end;
           if FSumTon-nBatQuaS>0 then
           begin
@@ -583,8 +645,9 @@ begin
           Exit;
         end;
       end;
-
+      {$ENDIF}
       Values['SampleID'] := FSampleID;
+      nStockNo:= Values['StockNO'];
       nList.Add(PackerEncodeStr(nTmp.Text));
       //new bill
 
@@ -599,21 +662,50 @@ begin
       Values['ZhiKa'] := gInfo.FZhiKa;
       Values['Truck'] := EditTruck.Text;
       Values['Lading'] := GetCtrlData(EditLading);
+      //Values['VPListID']:=
+      //Values['IsVIP'] := GetCtrlData(EditType);
+      //Values['Seal'] := EditFQ.Text;
       Values['BuDan'] := FBuDanFlag;
       if chkIfHYprint.Checked then
         Values['IfHYprt'] := 'Y'
       else
         Values['IfHYprt'] := 'N';
       Values['SalesType'] := gInfo.FSalesType;
-      nPos:=Pos('.',EditCenterID.Text);
-      if nPos>0 then
-        Values['CenterID']:=Copy(EditCenterID.Text,1,nPos-1)
-      else begin
-        ShowMsg('生产线格式非法', sHint); Exit;
-      end;
-      Values['JXSTHD'] := Trim(EditJXSTHD.Text);      
-    end;
+      Values['CenterID']:=nCenterID;
+      Values['JXSTHD'] := Trim(EditJXSTHD.Text);
 
+      {$IFDEF YDKP}
+      if cbxKw.Itemindex< 0 then
+      begin
+        ShowMsg('请选择库位号', sHint); Exit;
+      end;
+      nPos:=Pos('.',cbxKw.Text);
+      if (nPos>0) and (nPos<Length(cbxKw.Text)) then
+      begin
+        Values['KuWei']:= Copy(cbxKw.Text,1,nPos-1);
+        Values['LocationID']:= Copy(cbxKw.Text,nPos+1,Length(cbxKw.Text)-nPos);
+      end else
+      begin
+        ShowMsg('库位格式非法', sHint); Exit;
+      end;
+      {$ELSE}
+      Values['KuWei'] := '';
+      Values['LocationID']:= 'A';
+      {$ENDIF}
+      {nCenterYL:=GetCenterSUM(nStockNo,Values['CenterID']);
+      if nCenterYL <> '' then
+      begin
+        if IsNumber(nCenterYL,True) then
+        begin
+          nYL:= StrToFloat(nCenterYL);
+          if nYL <= 0 then
+          begin
+            ShowMsg('生产线余量不足：'+#13#10+FormatFloat('0.00',nYL),sHint);
+            Exit;
+          end;
+        end;
+      end; }
+    end; 
     gInfo.FIDList := SaveBill(PackerEncodeStr(nList.Text));
     //call mit bus
     if gInfo.FIDList = '' then Exit;
@@ -627,7 +719,7 @@ begin
     SetBillCard(gInfo.FIDList, EditTruck.Text, True);
   //办理磁卡
 
-  if nPrint then
+  if PrintYesNo then
     PrintDaiBill(gInfo.FIDList, True);
   //print report
   
@@ -635,60 +727,31 @@ begin
   ShowMsg('提货单保存成功', sHint);
 end;
 
-procedure TfFormBill.EditSampleIDPropertiesEditValueChanged(
+procedure TfFormBill.cbxSampleIDPropertiesChange(Sender: TObject);
+begin
+  {$IFDEF YDKP}
+  if cbxSampleID.ItemIndex > -1 then chkIfHYprint.Checked:=True;
+  {$ENDIF}
+end;
+
+procedure TfFormBill.cbxCenterIDPropertiesEditValueChanged(
   Sender: TObject);
-var nVal, nTVal: Double;
-    nIdx: Integer;
-begin
-  inherited;
-  if not EditSampleID.Focused then Exit;
-
-  EditSampleID.Text := Trim(EditSampleID.Text);
-  if EditSampleID.Text = '' then Exit;
-
-  nVal := 0;
-  for nIdx:=Low(gStockList) to High(gStockList) do
-  if gStockList[nIdx].FSelecte and
-     (gStockList[nIdx].FSampleID = EditSampleID.Text) then
-     nVal := nVal + gStockList[nIdx].FValue;
-
-  nVal := Float2Float(nVal, cPrecision, True);
-  nTVal:= GetSumTonnage(EditSampleID.Text);
-  nVal := Float2Float(nTVal - nVal, cPrecision, False);
-
-  SumSap.Caption:=FloatToStr(nVal);
-end;
-
-function TfFormBill.GetUnfinishedSupplyOrder(
-  const nTruckno: string): boolean;
 var
-  nSql,nStr:string;
+  nPos:Integer;
+  nCenterID:string;
 begin
-  nSql := 'select * from %s where D_Card<>'''' and D_Truck=''%s''';
-  nSql :=Format(nSql,[sTable_OrderDtl,nTruckno]);
-
-  try
-    Result := FDM.QueryTemp(nSql).RecordCount>0;
-    if Result then
-    begin
-      nStr := '车牌号[ %s ]存在未完成的采购订单！';
-      nStr := Format(nStr,[nTruckno]);
-      ShowMsg(nStr, sHint);
-      gSysLoger.AddLog(TfFormBill, '开提货单', nStr);
+  {$IFDEF YDKP}
+  if cbxCenterID.ItemIndex>-1 then
+  begin
+    nPos:=Pos('.',cbxCenterID.Text);
+    if nPos>0 then
+      nCenterID:=Copy(cbxCenterID.Text,1,nPos-1)
+    else begin
+      ShowMsg('生产线格式非法', sHint); Exit;
     end;
-  except
-    on E:Exception do
-    begin
-      nSql := nsql+':'+e.Message;
-      ShowMsg(nSql, sHint);
-      gSysLoger.AddLog(TfFormBill, '开提货单', nsql);
-    end;
+    InitSampleID(gStockName,gType,nCenterID,cbxSampleID);
   end;
-end;
-
-procedure TfFormBill.EditTruckExit(Sender: TObject);
-begin
-  BtnOK.Enabled := not GetUnfinishedSupplyOrder(EditTruck.Text);
+  {$ENDIF}
 end;
 
 initialization

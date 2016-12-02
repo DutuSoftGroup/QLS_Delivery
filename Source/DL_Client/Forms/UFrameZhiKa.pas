@@ -205,7 +205,7 @@ begin
     EditCID.Text := Trim(EditCID.Text);
     if EditCID.Text = '' then Exit;
 
-    FWhere := 'C_Name like ''%%%s%%'' Or C_PY like ''%%%s%%''';
+    FWhere := 'Z_OrgAccountName like ''%%%s%%'' ';
     FWhere := Format(FWhere, [EditCID.Text, EditCID.Text]);
     InitFormData(FWhere);
   end else

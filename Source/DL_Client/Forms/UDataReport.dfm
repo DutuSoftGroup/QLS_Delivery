@@ -9,6 +9,8 @@ object FDR: TFDR
   object Report1: TfrxReport
     Version = '4.7.109'
     DotMatrixReport = False
+    EngineOptions.PrintIfEmpty = False
+    EngineOptions.NewSilentMode = simReThrow
     IniFile = '\Software\Fast Reports'
     PreviewOptions.AllowEdit = False
     PreviewOptions.Buttons = [pbPrint, pbLoad, pbSave, pbExport, pbZoom, pbFind, pbOutline, pbPageSetup, pbTools, pbNavigator, pbExportQuick]

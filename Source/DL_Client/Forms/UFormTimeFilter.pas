@@ -14,7 +14,7 @@ uses
   cxButtonEdit;
 
 type
-  TfFormDateFilter = class(TForm)
+  TfFormTimeFilter = class(TForm)
     dxLayoutControl1Group_Root: TdxLayoutGroup;
     dxLayoutControl1: TdxLayoutControl;
     dxLayoutControl1Group1: TdxLayoutGroup;
@@ -50,7 +50,7 @@ uses
 //Desc: 显示时间段筛选窗口
 function ShowTimeFilterForm(var nStart,nEnd: TTime; nAdd: Boolean): Boolean;
 begin
-  with TfFormDateFilter.Create(Application) do
+  with TfFormTimeFilter.Create(Application) do
   begin
     if nAdd then
           Caption := '增加时间段'
@@ -70,7 +70,7 @@ begin
 end;
 
 //Desc: 日期选择
-procedure TfFormDateFilter.BtnOKClick(Sender: TObject);
+procedure TfFormTimeFilter.BtnOKClick(Sender: TObject);
 begin
   if EditEnd.Time < EditStart.Time then
   begin

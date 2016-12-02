@@ -197,7 +197,8 @@ begin
 
   if Sender = EditCustom then
   begin
-    Result := EditCustom.ItemIndex > -1;
+    //Result := EditCustom.ItemIndex > -1;
+    Result := EditCustom.Text <> '';
     nHint := '请选择有效的客户';
   end else
 

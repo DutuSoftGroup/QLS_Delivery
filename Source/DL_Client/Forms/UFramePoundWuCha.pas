@@ -96,7 +96,7 @@ begin
 
   FDM.ADOConn.BeginTrans;
   try
-    nSQL := 'Delete From %s Where P_ID=''%s''';
+    nSQL := 'Delete From %s Where ID=''%s''';
     nSQL := Format(nSQL, [sTable_PoundWucha, nStr]);
     FDM.ExecuteSQL(nSQL);
     FDM.ADOConn.CommitTrans;

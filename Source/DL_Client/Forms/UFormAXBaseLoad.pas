@@ -30,6 +30,7 @@ type
     chkPurOrder: TcxCheckBox;
     chkPurOrdLine: TcxCheckBox;
     chkSupAgr: TcxCheckBox;
+    chkKuWei: TcxCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure BtnOKClick(Sender: TObject);
@@ -252,6 +253,14 @@ begin
         nMsg:='补充协议同步成功'
       else
         nMsg:='补充协议同步失败';
+      ShowMsg(nMsg,sHint);
+    end;
+    if chkKuWei.Checked then
+    begin
+      if SyncWmsLocation then
+        nMsg:='库位信息同步成功'
+      else
+        nMsg:='库位信息同步失败';
       ShowMsg(nMsg,sHint);
     end;
   finally

@@ -109,6 +109,7 @@ type
     function SyncAXTPRESTIGEMBYCONT(var nData: string): Boolean;//Í¬²½AXÐÅÓÃ¶î¶È£¨¿Í»§-ºÏÍ¬£©ÐÅÏ¢µ½DL
     function SyncAXEmpTable(var nData: string): Boolean;//Í¬²½AXÔ±¹¤ÐÅÏ¢µ½DL
     function SyncAXInvCenGroup(var nData :string): Boolean;//Í¬²½AXÎïÁÏ×éÉú²úÏßµ½DL
+    function SyncAXwmsLocation(var nData :string): Boolean;//Í¬²½AX¿âÎ»ÐÅÏ¢µ½DL
     //--------------------------------------------------------------------------
     function GetAXSalesOrder(var nData: string): Boolean;//»ñÈ¡ÏúÊÛ¶©µ¥
     function GetAXSalesOrdLine(var nData: string): Boolean;//»ñÈ¡ÏúÊÛ¶©µ¥ÐÐ
@@ -135,7 +136,8 @@ type
     function GetAXContQuota(var nData: string): Boolean;//ÔÚÏß»ñÈ¡ÊÇ·ñ×¨¿î×¨ÓÃ
     function GetAXTPRESTIGEMANAGE(var nData: string): Boolean;//ÔÚÏß»ñÈ¡AXÐÅÓÃ¶î¶È£¨¿Í»§£©ÐÅÏ¢µ½DL
     function GetAXTPRESTIGEMBYCONT(var nData: string): Boolean;//ÔÚÏß»ñÈ¡AXÐÅÓÃ¶î¶È£¨¿Í»§-ºÏÍ¬£©ÐÅÏ¢µ½DL
-
+    function GetAXCompanyArea(var nData: string): Boolean;//ÔÚÏß»ñÈ¡Èý½ÇÃ³Ò×¶©µ¥µÄÏúÊÛÇøÓò
+    function GetInVentSum(var nData: string): Boolean;//ÔÚÏß»ñÈ¡Éú²úÏßÓàÁ¿
     {$ENDIF}
   public
     constructor Create; override;
@@ -567,6 +569,9 @@ begin
    cBC_GetAXMaCredLmt      : Result := GetAXMaCredLmt(nData);
    cBC_GetAXContQuota      : Result := GetAXContQuota(nData);
    cBC_GetCustNo           : Result := GetCustNo(nData);
+   cBC_GetAXCompanyArea    : Result := GetAXCompanyArea(nData);
+   cBC_GetAXInVentSum      : Result := GetInVentSum(nData);
+   cBC_SyncAXwmsLocation   : Result := SyncAXwmsLocation(nData);
    {$ENDIF}
    else
     begin
@@ -871,7 +876,8 @@ begin
       nAXMoney:= FieldByName('C_CashBalance').AsFloat+
                  FieldByName('C_BillBalance3M').AsFloat+
                  FieldByName('C_BillBalance6M').AsFloat+
-                 FieldByName('C_TemporBalance').AsFloat-
+                 FieldByName('C_TemporBalance').AsFloat+
+                 FieldByName('C_TemporAmount').AsFloat-
                  FieldByName('C_PrestigeQuota').AsFloat;
     end;
   end;
@@ -2406,7 +2412,7 @@ begin
       begin
         nStr := MakeSQLByStr([SF('D_Name', 'StockItem'),
                 SF('D_ParamB', Fields[0].AsString),
-                SF('D_Value', Fields[1].AsString),
+                SF('D_Value', Fields[1].AsString+'´ü×°'),
                 SF('D_Desc', Fields[2].AsString),
                 SF('D_Memo', 'D')
                 ], sTable_SysDict, '', True);
@@ -2415,7 +2421,7 @@ begin
 
         nStr := MakeSQLByStr([SF('D_Name', 'StockItem'),
                 SF('D_ParamB', Fields[0].AsString),
-                SF('D_Value', Fields[1].AsString),
+                SF('D_Value', Fields[1].AsString+'É¢×°'),
                 SF('D_Desc', Fields[2].AsString),
                 SF('D_Memo', 'S')
                 ], sTable_SysDict, '', True);
@@ -2431,14 +2437,14 @@ begin
         FListB.Add(nStr);
 
         nStr := SF('D_Name', 'StockItem')+' and '+SF('D_Memo', 'D')+' and '+SF('D_ParamB', Fields[0].AsString);
-        nStr := MakeSQLByStr([SF('D_Value', Fields[1].AsString),
+        nStr := MakeSQLByStr([SF('D_Value', Fields[1].AsString+'´ü×°'),
                 SF('D_Desc', Fields[2].AsString)
                 ], sTable_SysDict, nStr, False);
         //xxxxx
         FListC.Add(nStr);
 
         nStr := SF('D_Name', 'StockItem')+' and '+SF('D_Memo', 'S')+' and '+SF('D_ParamB', Fields[0].AsString);
-        nStr := MakeSQLByStr([SF('D_Value', Fields[1].AsString),
+        nStr := MakeSQLByStr([SF('D_Value', Fields[1].AsString+'É¢×°'),
                 SF('D_Desc', Fields[2].AsString)
                 ], sTable_SysDict, nStr, False);
         //xxxxx
@@ -2661,7 +2667,7 @@ begin
             'where DataAreaID=''%s'' ';
     nStr := Format(nStr, [sTable_AX_TPRESTIGEMANAGE, gCompanyAct]);
     //xxxxx
-    WriteLog(nStr);
+    //WriteLog(nStr);
     with gDBConnManager.SQLQuery(nStr, nDBWorker, sFlag_DB_AX) do
     if RecordCount > 0 then
     begin
@@ -2974,7 +2980,7 @@ begin
             'FailureDate,XTETempCreditNum,YKAMOUNT From %s '+
             'where CustAccount=''%s'' and CMT_ContractId=''%s'' and DataAreaID=''%s''';
     nStr := Format(nStr, [sTable_AX_TPRESTIGEMBYCONT, nCusID, nConID, FIn.FExtParam]);
-    WriteLog(nStr);
+    //WriteLog(nStr);
     with gDBConnManager.SQLQuery(nStr, nDBWorker, sFlag_DB_AX) do
     if RecordCount > 0 then
     begin
@@ -2992,6 +2998,65 @@ begin
       FOut.FExtParam:=FloatToStr(nBalance);
       Result:=True;
     end;
+  finally
+    gDBConnManager.ReleaseConnection(nDBWorker);
+  end;
+end;
+
+//ÔÚÏß»ñÈ¡Èý½ÇÃ³Ò×¶©µ¥¿Í»§µÄÏúÊÛÇøÓò
+function TWorkerBusinessCommander.GetAXCompanyArea(var nData: string): Boolean;
+var nStr: string;
+    nIdx: Integer;
+    nDBWorker: PDBWorker;
+    nXSQYMC: string;
+begin
+  Result := False;
+  nDBWorker := nil;
+  try
+    nStr := 'select XSQYMC from %s a '+
+            'left join %s b on a.XSQYBM=b.XSQYBM '+
+            'where salesid=''%s'' and dataareaid=''%s'' ';
+    nStr := Format(nStr, [sTable_AX_Sales,sTable_AX_CompArea, FIn.FData, FIn.FExtParam]);
+    //xxxxx
+    //WriteLog(nStr);
+    with gDBConnManager.SQLQuery(nStr, nDBWorker, sFlag_DB_AX) do
+    if RecordCount > 0 then
+    begin
+      nXSQYMC:= FieldByName('XSQYMC').AsString;
+      FOut.FData:=nXSQYMC;
+    end else
+    begin
+      FOut.FData:='';
+    end;
+    Result:=True;
+  finally
+    gDBConnManager.ReleaseConnection(nDBWorker);
+  end;
+end;
+
+//ÔÚÏß»ñÈ¡Éú²úÏßÓàÁ¿
+function TWorkerBusinessCommander.GetInVentSum(var nData: string): Boolean;
+var nStr: string;
+    nIdx: Integer;
+    nDBWorker: PDBWorker;
+begin
+  Result := False;
+  nDBWorker := nil;
+  try
+    nStr := 'select sum(PostedQty+Received-Deducted+Registered-Picked-ReservPhysical) as Yuliang from %s a '+
+            'where itemid=''%s'' and xtinventventerid=''%s'' and dataareaid=''%s'' ';
+    nStr := Format(nStr, [sTable_AX_InventSum, FIn.FData, FIn.FExtParam, gCompanyAct]);
+    //xxxxx
+    WriteLog(nStr);
+    with gDBConnManager.SQLQuery(nStr, nDBWorker, sFlag_DB_AX) do
+    if RecordCount > 0 then
+    begin
+      FOut.FData:=FieldByName('Yuliang').AsString;
+    end else
+    begin
+      FOut.FData:='0';
+    end;
+    Result:=True;
   finally
     gDBConnManager.ReleaseConnection(nDBWorker);
   end;
@@ -3098,6 +3163,66 @@ begin
     raise;
   end;
 end;
+
+//Í¬²½AX¿âÎ»ÐÅÏ¢µ½DL
+function TWorkerBusinessCommander.SyncAXwmsLocation(var nData :string): Boolean;
+var nStr,nType: string;
+    nIdx: Integer;
+    nDBWorker: PDBWorker;
+begin
+  FListA.Clear;
+  Result := True;
+
+  nDBWorker := nil;
+  try
+    nStr := 'Select InventLocationID,WMSLocationID From %s where DataAreaID=''%s''';
+    nStr := Format(nStr, [sTable_AX_WMSLocation, gCompanyAct]);
+    //xxxxx
+
+    with gDBConnManager.SQLQuery(nStr, nDBWorker, sFlag_DB_AX) do
+    if RecordCount > 0 then
+    begin
+      First;
+
+      while not Eof do
+      begin
+        if (Pos('ÊìÁÏ¿â',Fields[1].AsString)>0) then
+          nType:= 'ÊìÁÏ'
+        else if (Pos('Õ¾',Fields[1].AsString)>0) then
+          nType:= '´ü×°'
+        else if (Pos('Ë®Äà',Fields[1].AsString)>0) then
+          nType:= 'É¢×°'
+        else nType:= '';
+
+        nStr := MakeSQLByStr([SF('K_Type', nType),
+                SF('K_LocationID', Fields[0].AsString),
+                SF('K_KuWeiNo', Fields[1].AsString)
+                ], sTable_KuWei, '', True);
+        //xxxxx
+
+        FListA.Add(nStr);
+        Next;
+      end;
+    end;
+  finally
+    gDBConnManager.ReleaseConnection(nDBWorker);
+  end;
+
+  if FListA.Count > 0 then
+  try
+    FDBConn.FConn.BeginTrans;
+    nStr := 'truncate table ' + sTable_KuWei;
+    gDBConnManager.WorkerExec(FDBConn, nStr);
+
+    for nIdx:=0 to FListA.Count - 1 do
+      gDBConnManager.WorkerExec(FDBConn, FListA[nIdx]);
+    FDBConn.FConn.CommitTrans;
+  except
+    if FDBConn.FConn.InTransaction then
+      FDBConn.FConn.RollbackTrans;
+    raise;
+  end;
+end;
 //------------------------------------------------------------------------------
 
 //Date: 2016-06-29
@@ -3181,7 +3306,7 @@ var nStr: string;
     nDBWorker: PDBWorker;
     nPos:Integer;
     sId,LNum:string;
-    nType: string;
+    nType,nStockName: string;
 begin
   FListA.Clear;
   Result:=True;
@@ -3214,11 +3339,13 @@ begin
             nType:='S'
           else
             nType:=FieldByName('CMT_PACKTYPE').AsString;
+          nStockName:= FieldByName('Name').AsString;
+          nStockName:= StringReplace(nStockName,'"','',[rfReplaceAll]);
           nStr := MakeSQLByStr([SF('D_ZID', FieldByName('SalesId').AsString),
                     SF('D_RECID', FieldByName('Recid').AsString),
                     SF('D_Type', nType),
                     SF('D_StockNo', FieldByName('ItemId').AsString),
-                    SF('D_StockName', FieldByName('Name').AsString),
+                    SF('D_StockName', nStockName),
                     SF('D_SalesStatus', FieldByName('SalesStatus').AsString),
                     SF('D_Price', FieldByName('SalesPrice').AsString),
                     SF('D_Value', FieldByName('RemainSalesPhysical').AsString),
@@ -3570,6 +3697,7 @@ function TWorkerBusinessCommander.GetAXVehicleNo(var nData: string): Boolean;//»
 var nStr: string;
     nIdx: Integer;
     nDBWorker: PDBWorker;
+    nPreUse,nPreValue: string;
 begin
   FListA.Clear;
   Result:=True;
@@ -3594,8 +3722,16 @@ begin
         First;
         while not Eof do
         begin
+          {if FieldByName('VehicleType').AsString='É¢×°' then
+            nPreUse:='Y'
+          else}
+            nPreUse:='N';
+          nPreValue:= FieldByName('TAREWEIGHT').AsString;
+          if not IsNumber(nPreValue,True) then nPreValue:='0.00';
           nStr := MakeSQLByStr([SF('T_Truck', FieldByName('VehicleId').AsString),
                     SF('T_Owner', FieldByName('CZ').AsString),
+                    SF('T_PrePUse', nPreUse),
+                    SF('T_PrePValue', nPreValue),
                     SF('T_Driver', FieldByName('DriverId').AsString),
                     SF('T_Card', FieldByName('CMT_PrivateId').AsString),
                     SF('T_CompanyID', FieldByName('companyid').AsString),
@@ -3698,7 +3834,7 @@ var nStr: string;
     nIdx: Integer;
     nDBWorker: PDBWorker;
     nPos:Integer;
-    fId,LNum:string;
+    fId,LNum,nStockName:string;
 begin
   FListA.Clear;
   nDBWorker := nil;
@@ -3723,10 +3859,12 @@ begin
         First;
         while not Eof do
         begin
+          nStockName:= FieldByName('Name').AsString;
+          nStockName:= StringReplace(nStockName,'"','',[rfReplaceAll]);
           nStr := MakeSQLByStr([SF('B_ID', FieldByName('PurchId').AsString),
                     SF('B_StockType', FieldByName('CMT_PACKTYPE').AsString),
                     SF('B_StockNo', FieldByName('ItemId').AsString),
-                    SF('B_StockName', FieldByName('Name').AsString),
+                    SF('B_StockName', nStockName),
                     SF('B_BStatus', FieldByName('PurchStatus').AsString),
                     SF('B_Value', FieldByName('QtyOrdered').AsString),
                     SF('B_SentValue', FieldByName('PurchReceivedNow').AsString),
@@ -3795,7 +3933,7 @@ begin
     end;
     nStr:='<PRIMARY>'+
              '<PLANQTY>'+FieldByName('L_PlanQty').AsString+'</PLANQTY>'+
-             '<VEHICLEId></VEHICLEId>'+
+             '<VEHICLEId>'+FieldByName('L_Truck').AsString+'</VEHICLEId>'+
              '<VENDPICKINGLISTID>S</VENDPICKINGLISTID>'+
              '<TRANSPORTER></TRANSPORTER>'+
              '<TRANSPLANID>'+copy(FieldByName('L_ID').AsString,2,10)+'</TRANSPLANID>'+
@@ -3832,8 +3970,11 @@ begin
         gDBConnManager.WorkerExec(FDBConn,nSQL);
       end;
     except
-      nStr := 'Í¬²½Ìá»õµ¥Êý¾Ýµ½AXÏµÍ³Ê§°Ü.';
-      raise Exception.Create(nStr);
+      on e:Exception do
+      begin
+        nStr := FieldByName('L_ID').AsString+'Ìá»õµ¥Í¬²½Ê§°Ü.';
+        WriteLog('AX½Ó¿ÚÒì³££º'+nStr+#13#10+e.Message);
+      end;
     end;
   finally
 
@@ -3873,7 +4014,7 @@ begin
     end;
     nStr:='<PRIMARY>'+
              '<PLANQTY>'+FieldByName('L_PlanQty').AsString+'</PLANQTY>'+
-             '<VEHICLEId></VEHICLEId>'+
+             '<VEHICLEId>'+FieldByName('L_Truck').AsString+'</VEHICLEId>'+
              '<VENDPICKINGLISTID>S</VENDPICKINGLISTID>'+
              '<TRANSPORTER></TRANSPORTER>'+
              '<TRANSPLANID>'+copy(FieldByName('L_ID').AsString,2,10)+'</TRANSPLANID>'+
@@ -3910,8 +4051,11 @@ begin
         gDBConnManager.WorkerExec(FDBConn,nSQL);
       end;
     except
-      nStr := 'Í¬²½É¾³ýÌá»õµ¥Êý¾Ýµ½AXÏµÍ³Ê§°Ü.';
-      raise Exception.Create(nStr);
+      on e:Exception do
+      begin
+        nStr := FieldByName('L_ID').AsString+'É¾³ýÌá»õµ¥Í¬²½Ê§°Ü.';
+        WriteLog('AX½Ó¿ÚÒì³££º'+nStr+#13#10+e.Message);
+      end;
     end;
   finally
 
@@ -3951,7 +4095,7 @@ begin
     end;
     nStr:='<PRIMARY>'+
              '<PLANQTY>'+FieldByName('L_PlanQty').AsString+'</PLANQTY>'+
-             '<VEHICLEId></VEHICLEId>'+
+             '<VEHICLEId>'+FieldByName('L_Truck').AsString+'</VEHICLEId>'+
              '<VENDPICKINGLISTID>S</VENDPICKINGLISTID>'+
              '<TRANSPORTER></TRANSPORTER>'+
              '<TRANSPLANID>'+copy(FieldByName('L_ID').AsString,2,10)+'</TRANSPLANID>'+
@@ -3968,10 +4112,6 @@ begin
     //----------------------------------------------------------------------------
     try
       nService:=GetBPM2ERPServiceSoap(True,'',nil);
-      //s:=nService.test;
-      //WriteLog('²âÊÔ·µ»ØÖµ£º'+s);
-      //s:=nService.WRZS2ERPInfoTEST('WRZS_001',nStr,'000');
-      //WriteLog('·µ»ØÖµ£º'+s);
       nMsg:=nService.WRZS2ERPInfo('WRZS_001',nStr,'000');
       if nMsg=1 then
       begin
@@ -3988,8 +4128,11 @@ begin
         gDBConnManager.WorkerExec(FDBConn,nSQL);
       end;
     except
-      nStr := 'Í¬²½¿Õ³µ³ö³§Ìá»õµ¥Êý¾Ýµ½AXÏµÍ³Ê§°Ü.';
-      raise Exception.Create(nStr);
+      on e:Exception do
+      begin
+        nStr := FieldByName('L_ID').AsString+'¿Õ³µ³ö³§Í¬²½Ê§°Ü.';
+        WriteLog('AX½Ó¿ÚÒì³££º'+nStr+#13#10+e.Message);
+      end;
     end;
   finally
 
@@ -4010,8 +4153,8 @@ begin
   Result := False;
 
   nSQL := 'select a.L_ID,a.L_StockNo,a.L_Truck,a.L_PValue,a.L_MValue,a.L_Value,'+
-          'a.L_InvCenterId,a.L_InvLocationId,a.L_PlanQty,a.L_HYDan,a.L_Type,'+
-          'a.L_MMan,a.L_MDate,b.P_ID,a.L_ZhiKa,a.L_LineRecID'+
+          'a.L_InvCenterId,a.L_InvLocationId,a.L_CW,a.L_PlanQty,a.L_HYDan,a.L_Type,'+
+          'a.L_MMan,a.L_MDate,b.P_ID,a.L_ZhiKa,a.L_LineRecID,a.L_StockName'+
           ' From %s a,%s b '+
           ' where a.L_ID = ''%s'' and a.L_ID=b.P_Bill ';
   nSQL := Format(nSQL,[sTable_Bill,sTable_PoundLog,FIn.FData]);
@@ -4031,18 +4174,25 @@ begin
       WriteLog(nData);
       Exit;
     end;
-    if FieldByName('L_HYDan').AsString='' then
+    nHYDan:=FieldByName('L_HYDan').AsString;
+    if nHYDan='' then
     begin
-      nData := '½»»õµ¥ºÅÎª[ %s ]µÄ»¯Ñéµ¥²»´æÔÚ.';
-      nData := Format(nData, [FIn.FData]);
-      WriteLog(nData);
-      Exit;
+      //WriteLog(FieldByName('L_StockName').AsString);
+      if (Pos('ÊìÁÏ',FieldByName('L_StockName').AsString)>0) then
+      begin
+        nHYDan:='I';
+      end else
+      begin
+        nData := '½»»õµ¥ºÅÎª[ %s ]µÄ»¯Ñéµ¥²»´æÔÚ.';
+        nData := Format(nData, [FIn.FData]);
+        WriteLog(nData);
+        Exit;
+      end;
     end;
     nsWeightTime:=formatdatetime('yyyy-mm-dd hh:mm:ss',FieldByName('L_MDate').AsDateTime);
     if nsWeightTime<>'' then
     begin
       nsWeightTime:=Copy(nsWeightTime,12,Length(nsWeightTime)-11);
-      WriteLog(nsWeightTime);
     end;
     if FieldByName('L_Type').AsString='D' then
       nNetValue:=FieldByName('L_MValue').AsFloat-FieldByName('L_PValue').AsFloat;
@@ -4060,8 +4210,8 @@ begin
       nStr := nStr+'<Netweight>'+FieldByName('L_Value').AsString+'</Netweight>';
     nStr := nStr+'<REFERENCEQTY>'+FieldByName('L_PlanQty').AsString+'</REFERENCEQTY>';
     nStr := nStr+'<PackQty></PackQty>';
-    nStr := nStr+'<SampleID>'+FieldByName('L_HYDan').AsString+'</SampleID>';
-    nStr := nStr+'<CMTCW></CMTCW>';
+    nStr := nStr+'<SampleID>'+nHYDan+'</SampleID>';
+    nStr := nStr+'<CMTCW>'+FieldByName('L_CW').AsString+'</CMTCW>';
     nStr := nStr+'<WeightMan>'+FieldByName('L_MMan').AsString+'</WeightMan>';
     nStr := nStr+'<WeightTime>'+nsWeightTime+'</WeightTime>';
     nStr := nStr+'<WeightDate>'+FieldByName('L_MDate').AsString+'</WeightDate>';
@@ -4097,8 +4247,11 @@ begin
         gDBConnManager.WorkerExec(FDBConn,nSQL);
       end;
     except
-      nStr := 'Í¬²½ÏúÊÛ°õµ¥Êý¾Ýµ½AXÏµÍ³Ê§°Ü.';
-      raise Exception.Create(nStr);
+      on e:Exception do
+      begin
+        nStr := FieldByName('P_ID').AsString+'ÏúÊÛ°õµ¥Í¬²½Ê§°Ü.';
+        WriteLog('AX½Ó¿ÚÒì³££º'+#13#10+e.Message);
+      end;
     end;
   finally
 
@@ -4114,7 +4267,6 @@ var nID,nIdx: Integer;
     nsWeightTime:string;
 begin
   Result := False;
-  //nStr := AdjustListStrFormat(FIn.FData , '''' , True , ',' , True);
   nSQL := 'select * From %s a, %s b where a.D_OID=b.O_ID and D_ID = ''%s'' ';
   nSQL := Format(nSQL,[sTable_OrderDtl,sTable_Order,FIn.FData]);
   with gDBConnManager.WorkerQuery(FDBConn, nSQL)  do
@@ -4129,7 +4281,6 @@ begin
     if nsWeightTime<>'' then
     begin
       nsWeightTime:=Copy(nsWeightTime,12,Length(nsWeightTime)-11);
-      WriteLog(nsWeightTime);
     end;
     nStr := '<PRIMARY>';
     nStr := nStr+'<PurchId>'+FieldByName('O_BID').AsString+'</PurchId>';
@@ -4174,8 +4325,11 @@ begin
         gDBConnManager.WorkerExec(FDBConn,nSQL);
       end;
     except
-      nStr := 'Í¬²½²É¹º°õµ¥Êý¾Ýµ½AXÏµÍ³Ê§°Ü.';
-      raise Exception.Create(nStr);
+      on e:Exception do
+      begin
+        nStr := FieldByName('D_ID').AsString+'²É¹º°õµ¥Í¬²½Ê§°Ü.';
+        WriteLog('AX½Ó¿ÚÒì³££º'+#13#10+e.Message);
+      end;
     end;
   finally
 
@@ -4636,6 +4790,7 @@ begin
     Values['ContQuota'] := FieldByName('C_ContQuota').AsString;
     Values['ContractID'] := FieldByName('Z_CID').AsString;
     Values['KHSBM'] := FieldByName('Z_KHSBM').AsString;
+    Values['OrgXSQYMC'] := FieldByName('Z_OrgXSQYMC').AsString;
   end;
 
   Result := True;
@@ -5042,9 +5197,12 @@ begin
               SF('L_HYDan', FListC.Values['SampleID']),
               SF('L_SalesType', FListA.Values['SalesType']),
               SF('L_InvCenterId', FListA.Values['CenterID']),
-              SF('L_InvLocationId', 'A'),
+              SF('L_InvLocationId', FListA.Values['LocationID']),
               SF('L_KHSBM', FListA.Values['KHSBM']),
-              SF('L_JXSTHD', FListA.Values['JXSTHD'])
+              SF('L_JXSTHD', FListA.Values['JXSTHD']),
+              SF('L_OrgXSQYMC', FListA.Values['OrgXSQYMC']),
+              SF('L_CW', FListA.Values['KuWei']),
+              SF('L_TriaTrade', FListA.Values['TriaTrade'])
               ], sTable_Bill, '', True);
       gDBConnManager.WorkerExec(FDBConn, nStr);
 
@@ -5137,6 +5295,7 @@ begin
           gDBConnManager.WorkerExec(FDBConn, nStr);
         end;
         //freeze money from account
+        WriteLog('['+nOut.FData+']Add YKMoney: '+nStr);
       end;
     end;
 
@@ -5696,26 +5855,30 @@ begin
         gDBConnManager.WorkerExec(FDBConn, nStr);
       end;
       //ÊÍ·Å³ö½ð
-    end else
+    end else}
     //if (GetOnLineModel <> sFlag_Yes) then
     begin
       nDBZhiKa:=LoadZhiKaInfo(nZK,nHint);
       if Assigned(nDBZhiKa) then
       with nDBZhiKa do
       begin
-        if FieldByName('C_ContQuota').AsString='1' then
+        if FieldByName('Z_TriangleTrade').AsString <> '1' then
         begin
-          nStr := 'Update %s Set A_ConFreezeMoney=A_ConFreezeMoney-(%.2f) Where A_CID=''%s''';
-          nStr := Format(nStr, [sTable_CusAccount, nMoney, nCus]);
-        end else
-        begin
-          nStr := 'Update %s Set A_FreezeMoney=A_FreezeMoney-(%.2f) Where A_CID=''%s''';
-          nStr := Format(nStr, [sTable_CusAccount, nMoney, nCus]);
+          if FieldByName('C_ContQuota').AsString='1' then
+          begin
+            nStr := 'Update %s Set A_ConFreezeMoney=A_ConFreezeMoney-(%.2f) Where A_CID=''%s''';
+            nStr := Format(nStr, [sTable_CusAccount, nMoney, nCus]);
+          end else
+          begin
+            nStr := 'Update %s Set A_FreezeMoney=A_FreezeMoney-(%.2f) Where A_CID=''%s''';
+            nStr := Format(nStr, [sTable_CusAccount, nMoney, nCus]);
+          end;
+          gDBConnManager.WorkerExec(FDBConn, nStr);
+          WriteLog('['+FIn.FData+']Release YKMoney: '+nStr);
         end;
-        gDBConnManager.WorkerExec(FDBConn, nStr);
       end;
       //ÊÍ·Å¶³½á½ð
-    end;}
+    end;
 
     nStr := 'Update %s Set D_Value=D_Value+(%.2f) Where D_ZID=''%s''';
     nStr := Format(nStr, [sTable_ZhiKaDtl, nVal, nZK]);
@@ -6070,7 +6233,8 @@ begin
   nStr := 'Select L_ID,L_ZhiKa,L_CusID,L_CusName,L_Type,L_StockNo,' +
           'L_StockName,L_Truck,L_Value,L_Price,L_ZKMoney,L_Status,' +
           'L_NextStatus,L_Card,L_IsVIP,L_PValue,L_MValue,L_SalesType,'+
-          'L_EmptyOut From $Bill b ';
+          'L_EmptyOut,L_LineRecID,L_InvLocationId,L_InvCenterId,'+
+          'L_TriaTrade From $Bill b ';
   //xxxxx
 
   if nIsBill then
@@ -6131,7 +6295,13 @@ begin
       FPData.FValue := FieldByName('L_PValue').AsFloat;
       FMData.FValue := FieldByName('L_MValue').AsFloat;
       FSalesType    := FieldByName('L_SalesType').AsString;
+
       FYSValid      := FieldByName('L_EmptyOut').AsString;
+      FRecID        := FieldByName('L_LineRecID').AsString;
+      FLocationID   := FieldByName('L_InvLocationId').AsString;
+      
+      FCenterID     := FieldByName('L_InvCenterId').AsString;
+      FTriaTrade    := FieldByName('L_TriaTrade').AsString;
       FSelected := True;
 
       Inc(nIdx);
@@ -6435,15 +6605,28 @@ begin
       if nInt >= 0 then //ÒÑ³ÆÆ¤
            FNextStatus := sFlag_TruckBFM
       else FNextStatus := sFlag_TruckOut;
-
+      {$IFDEF ZXKP}
       nSQL := MakeSQLByStr([SF('L_Status', FStatus),
               SF('L_NextStatus', FNextStatus),
               SF('L_LadeTime', sField_SQLServer_Now, sfVal),
               SF('L_LadeMan', FIn.FBase.FFrom.FUser),
               SF('L_HYDan', FSampleID),
               SF('L_EmptyOut', FYSValid),
-              SF('L_WorkOrder', FLocationID)
+              SF('L_WorkOrder', FWorkOrder),
+              SF('L_CW', FKw)
               ], sTable_Bill, SF('L_ID', FID), False);
+      {$ELSE}
+      nSQL := MakeSQLByStr([SF('L_Status', FStatus),
+              SF('L_NextStatus', FNextStatus),
+              SF('L_LadeTime', sField_SQLServer_Now, sfVal),
+              SF('L_LadeMan', FIn.FBase.FFrom.FUser),
+              SF('L_HYDan', FSampleID),
+              SF('L_EmptyOut', FYSValid),
+              SF('L_WorkOrder', FWorkOrder),
+              SF('L_InvLocationId', FLocationID),
+              SF('L_CW', FKw)
+              ], sTable_Bill, SF('L_ID', FID), False);
+      {$ENDIF}
       FListA.Add(nSQL);
 
       nSQL := 'Update %s Set T_InLade=%s Where T_HKBills Like ''%%%s%%''';
@@ -6458,14 +6641,28 @@ begin
     for nIdx:=Low(nBills) to High(nBills) do
     with nBills[nIdx] do
     begin
+      {$IFDEF ZXKP}
       nSQL := MakeSQLByStr([SF('L_Status', sFlag_TruckFH),
               SF('L_NextStatus', sFlag_TruckBFM),
               SF('L_LadeTime', sField_SQLServer_Now, sfVal),
               SF('L_LadeMan', FIn.FBase.FFrom.FUser),
               SF('L_HYDan', FSampleID),
               SF('L_EmptyOut', FYSValid),
-              SF('L_WorkOrder', FLocationID)
+              SF('L_WorkOrder', FWorkOrder),
+              SF('L_CW', FKw)
               ], sTable_Bill, SF('L_ID', FID), False);
+      {$ELSE}
+      nSQL := MakeSQLByStr([SF('L_Status', sFlag_TruckFH),
+              SF('L_NextStatus', sFlag_TruckBFM),
+              SF('L_LadeTime', sField_SQLServer_Now, sfVal),
+              SF('L_LadeMan', FIn.FBase.FFrom.FUser),
+              SF('L_HYDan', FSampleID),
+              SF('L_EmptyOut', FYSValid),
+              SF('L_WorkOrder', FWorkOrder),
+              SF('L_InvLocationId', FLocationID),
+              SF('L_CW', FKw)
+              ], sTable_Bill, SF('L_ID', FID), False);
+      {$ENDIF}
       FListA.Add(nSQL);
 
       nSQL := 'Update %s Set T_InLade=%s Where T_HKBills Like ''%%%s%%''';
@@ -6502,19 +6699,20 @@ begin
       if FYSValid <> sFlag_Yes then   //ÅÐ¶ÏÊÇ·ñ¿Õ³µ³ö³§
       begin
         nOnLineModel:=GetOnLineModel; //»ñÈ¡ÊÇ·ñÔÚÏßÄ£Ê½
-        if nBills[0].FSalesType='0' then
+        if FSalesType='0' then
         begin
           nBxz:=False;
         end else
         begin
-          if not TWorkerBusinessCommander.CallMe(cBC_GetTriangleTrade,    //»ñÈ¡ÊÇ·ñÈý½ÇÃ³Ò×
+          {if not TWorkerBusinessCommander.CallMe(cBC_GetTriangleTrade,    //»ñÈ¡ÊÇ·ñÈý½ÇÃ³Ò×
                 nBills[0].FZhiKa, '', @nOut) then
           begin
             nData := nOut.FData;
             Exit;
           end;
           nTriaTrade:=nOut.FData;
-          if nTriaTrade = sFlag_Yes then    // Èý½ÇÃ³Ò×
+          if nTriaTrade = sFlag_Yes then }   // Èý½ÇÃ³Ò×
+          if FTriaTrade = '1' then    // Èý½ÇÃ³Ò×
           begin
             if nOnLineModel=sFlag_Yes then   //ÔÚÏßÄ£Ê½£¬Ô¶³Ì»ñÈ¡¿Í»§×Ê½ð¶î¶È
             begin
@@ -6590,8 +6788,8 @@ begin
               end;
               m := StrToFloat(nOut.FData);
               WriteLog(nBills[0].FID+'±¾µØ×Ê½ð£º'+Floattostr(m));
-              WriteLog(nBills[0].FCusID+'¶³½á×Ê½ð£º'+Floattostr(Float2Float(FPrice * FValue, cPrecision, False)));
               m := m + Float2Float(FPrice * FValue, cPrecision, False);
+              WriteLog(nBills[0].FCusID+'¶³½á×Ê½ð£º'+Floattostr(Float2Float(FPrice * FValue, cPrecision, False)));
               //¿Í»§¿ÉÓÃ½ð
             end;
           end;
@@ -6620,7 +6818,8 @@ begin
                 Exit;
               end;
             end;
-            if nTriaTrade <> sFlag_Yes then
+            //if nTriaTrade <> sFlag_Yes then
+            if FTriaTrade <> '1' then
             begin
               f := Float2Float(FPrice * FValue, cPrecision, True) - m;
               //Êµ¼ÊËùÐè½ð¶îÓë¿ÉÓÃ½ð²î¶î
@@ -6666,7 +6865,8 @@ begin
                 Exit;
               end;
             end;
-            if nTriaTrade <> sFlag_Yes then
+            //if nTriaTrade <> sFlag_Yes then
+            if FTriaTrade <> '1' then
             begin
               f := Float2Float(FPrice * FValue, cPrecision, True) - m;
               //Êµ¼ÊËùÐè½ð¶îÓë¿ÉÓÃ½ð²î¶î
@@ -6687,26 +6887,31 @@ begin
             end;
           end;
 
-          {m := Float2Float(FPrice * FValue, cPrecision, True);
-          m := m - Float2Float(FPrice * nVal, cPrecision, True);
-          //ÐÂÔö¶³½á½ð¶î
-          nDBZhiKa:=LoadZhiKaInfo(nBills[0].FZhiKa,nHint);
-          with nDBZhiKa do
+          //if nTriaTrade <> sFlag_Yes then
+          if FTriaTrade <> '1' then
           begin
-            if FieldByName('C_ContQuota').AsString='1' then
+            m := Float2Float(FPrice * FValue, cPrecision, True);
+            m := m - Float2Float(FPrice * nVal, cPrecision, True);
+            //ÐÂÔö¶³½á½ð¶î
+            nDBZhiKa:=LoadZhiKaInfo(nBills[0].FZhiKa,nHint);
+            with nDBZhiKa do
             begin
-              nSQL := 'Update %s Set A_ConFreezeMoney=A_ConFreezeMoney+(%.2f) ' +
-                      'Where A_CID=''%s''';
-              nSQL := Format(nSQL, [sTable_CusAccount, m, FCusID]);
-            end else
-            begin
-              nSQL := 'Update %s Set A_FreezeMoney=A_FreezeMoney+(%.2f) ' +
-                      'Where A_CID=''%s''';
-              nSQL := Format(nSQL, [sTable_CusAccount, m, FCusID]);
+              if FieldByName('C_ContQuota').AsString='1' then
+              begin
+                nSQL := 'Update %s Set A_ConFreezeMoney=A_ConFreezeMoney+(%.2f) ' +
+                        'Where A_CID=''%s''';
+                nSQL := Format(nSQL, [sTable_CusAccount, m, FCusID]);
+              end else
+              begin
+                nSQL := 'Update %s Set A_FreezeMoney=A_FreezeMoney+(%.2f) ' +
+                        'Where A_CID=''%s''';
+                nSQL := Format(nSQL, [sTable_CusAccount, m, FCusID]);
+              end;
+              FListA.Add(nSQL); //¸üÐÂÕË»§
+              WriteLog('['+FID+']Update YKMoney: '+nStr);
             end;
-            FListA.Add(nSQL); //¸üÐÂÕË»§
-          end; }
-
+          end;
+          
           nSQL := MakeSQLByStr([SF('L_Value', FValue, sfVal)
                   ], sTable_Bill, SF('L_ID', FID), False);
           FListA.Add(nSQL); //¸üÐÂÌá»õÁ¿
@@ -6865,48 +7070,35 @@ begin
               ], sTable_Bill, SF('L_ID', FID), False);
       FListA.Add(nSQL); //¸üÐÂ½»»õµ¥
 
-      {nVal := Float2Float(FPrice * FValue, cPrecision, True);
+      nVal := Float2Float(FPrice * FValue, cPrecision, True);
       //Ìá»õ½ð¶î
-      nDBZhiKa:=LoadZhiKaInfo(nBills[nIdx].FZhiKa,nHint);
-      with nDBZhiKa do
+      if (FYSValid = sFlag_Yes) and (FTriaTrade <> '1') then   //ÅÐ¶ÏÊÇ·ñ¿Õ³µ³ö³§
       begin
-        if FieldByName('C_ContQuota').AsString='1' then
+        nSQL := 'Select L_FYAX From %s Where L_ID = ''%s'' ';
+        nSQL := Format(nSQL, [sTable_Bill, FID]);
+        with gDBConnManager.WorkerQuery(FDBConn, nSQL) do
         begin
-          if FYSValid <> sFlag_Yes then   //ÅÐ¶ÏÊÇ·ñ¿Õ³µ³ö³§
+          if FieldByName('L_FYAX').AsString<>'1' then
           begin
-            nSQL := 'Update %s Set A_ConOutMoney=A_ConOutMoney+(%.2f),' +
-                    'A_FreezeMoney=A_FreezeMoney-(%.2f) Where A_CID=''%s''';
-            nSQL := Format(nSQL, [sTable_CusAccount, nVal, nVal, FCusID]);
-          end else
-          begin
-            nSQL := 'Update %s Set A_FreezeMoney=A_FreezeMoney-(%.2f) Where A_CID=''%s''';
-            nSQL := Format(nSQL, [sTable_CusAccount, nVal, FCusID]);
-          end;
-        end else
-        begin
-          if FYSValid <> sFlag_Yes then  //ÅÐ¶ÏÊÇ·ñ¿Õ³µ³ö³§
-          begin
-            nSQL := 'Update %s Set A_OutMoney=A_OutMoney+(%.2f),' +
-                    'A_FreezeMoney=A_FreezeMoney-(%.2f) Where A_CID=''%s''';
-            nSQL := Format(nSQL, [sTable_CusAccount, nVal, nVal, FCusID]);
-          end else
-          begin
-            nSQL := 'Update %s Set A_FreezeMoney=A_FreezeMoney-(%.2f) Where A_CID=''%s''';
-            nSQL := Format(nSQL, [sTable_CusAccount, nVal, FCusID]);
+            nDBZhiKa:=LoadZhiKaInfo(nBills[nIdx].FZhiKa,nHint);
+            with nDBZhiKa do
+            begin
+              if FieldByName('C_ContQuota').AsString='1' then
+              begin
+                nSQL := 'Update %s Set A_ConFreezeMoney=A_ConFreezeMoney-(%.2f) Where A_CID=''%s''';
+                nSQL := Format(nSQL, [sTable_CusAccount, nVal, FCusID]);
+              end else
+              begin
+                nSQL := 'Update %s Set A_FreezeMoney=A_FreezeMoney-(%.2f) Where A_CID=''%s''';
+                nSQL := Format(nSQL, [sTable_CusAccount, nVal, FCusID]);
+              end;
+              FListA.Add(nSQL); //¸üÐÂ¿Í»§×Ê½ð(¿ÉÄÜ²»Í¬¿Í»§)
+              WriteLog('['+FID+']Relese YKMoney: '+nSQL);
+            end;
           end;
         end;
-        FListA.Add(nSQL); //¸üÐÂ¿Í»§×Ê½ð(¿ÉÄÜ²»Í¬¿Í»§)
-      end;}
+      end;
     end;
-
-    {$IFDEF XAZL}
-    nStr := CombinStr(FListB, ',', True);
-    if not TWorkerBusinessCommander.CallMe(cBC_SyncStockBill, nStr, '', @nOut) then
-    begin
-      nData := nOut.FData;
-      Exit;
-    end;
-    {$ENDIF}
 
     nSQL := 'Update %s Set C_Status=''%s'' Where C_Card=''%s''';
     nSQL := Format(nSQL, [sTable_Card, sFlag_CardIdle, nBills[0].FCard]);
@@ -7038,9 +7230,13 @@ begin
 
   if FIn.FExtParam = sFlag_TruckBFM then //³ÆÁ¿Ã«ÖØ
   begin
+    {$IFDEF ZXKP}
+
+    {$ELSE}
     if Assigned(gHardShareData) then
       gHardShareData('TruckOut:' + nBills[0].FCard);
     //°õ·¿´¦Àí×Ô¶¯³ö³§
+    {$ENDIF}
   end;
 
   {$IFDEF MicroMsg}
@@ -7430,7 +7626,8 @@ begin
             SF('O_Truck', FListA.Values['Truck']),
             SF('O_Man', FIn.FBase.FFrom.FUser),
             SF('O_Date', sField_SQLServer_Now, sfVal),
-            SF('O_BRecID', FListA.Values['RecID'])
+            SF('O_BRecID', FListA.Values['RecID']),
+            SF('O_IfNeiDao', FListA.Values['NeiDao'])
             ], sTable_Order, '', True);
     gDBConnManager.WorkerExec(FDBConn, nStr);
 
@@ -7733,7 +7930,7 @@ begin
   end;
 
   nStr := 'Select O_ID,O_Card,O_ProID,O_ProName,O_Type,O_StockNo,' +
-          'O_StockName,O_Truck,O_Value ' +
+          'O_StockName,O_Truck,O_Value,O_IfNeiDao ' +
           'From $OO oo ';
   //xxxxx
 
@@ -7770,6 +7967,7 @@ begin
 
       Values['O_Card']       := FieldByName('O_Card').AsString;
       Values['O_Value']      := FloatToStr(FieldByName('O_Value').AsFloat);
+      Values['NeiDao']       := FieldByName('O_IfNeiDao').AsString;
     end;
   end;
 
@@ -7808,7 +8006,8 @@ begin
         FStatus     := sFlag_TruckNone;
         FNextStatus := sFlag_TruckNone;
 
-        FSelected := True;
+        FNeiDao     := Values['NeiDao'];
+        FSelected   := True;
       end;  
     end else
     begin
@@ -7862,6 +8061,8 @@ begin
         FKZValue  := FieldByName('D_KZValue').AsFloat;
         FMemo     := FieldByName('D_Memo').AsString;
         FYSValid  := FieldByName('D_YSResult').AsString;
+
+        FNeiDao     := Values['NeiDao'];
         FSelected := True;
 
         Inc(nIdx);
@@ -7894,7 +8095,7 @@ end;
 //Parm: ½»»õµ¥[FIn.FData];¸ÚÎ»[FIn.FExtParam]
 //Desc: ±£´æÖ¸¶¨¸ÚÎ»Ìá½»µÄ½»»õµ¥ÁÐ±í
 function TWorkerBusinessOrders.SavePostOrderItems(var nData: string): Boolean;
-var nVal: Double;
+var nVal, nNet, nAKVal: Double;
     nIdx: Integer;
     nStr,nSQL: string;
     nPound: TLadingBillItems;
@@ -7937,7 +8138,8 @@ begin
             SF('D_Status', sFlag_TruckIn),
             SF('D_NextStatus', sFlag_TruckBFP),
             SF('D_InMan', FIn.FBase.FFrom.FUser),
-            SF('D_InTime', sField_SQLServer_Now, sfVal)
+            SF('D_InTime', sField_SQLServer_Now, sfVal),
+            SF('D_RecID', FRecID)
             ], sTable_OrderDtl, '', True);
       FListA.Add(nSQL);
     end;  
@@ -7975,15 +8177,12 @@ begin
     with nPound[0] do
     begin
       FStatus := sFlag_TruckBFP;
-      {$IFDEF GLPURCH}
-      FNextStatus := sFlag_TruckBFM;
-      {$ELSE}
       FNextStatus := sFlag_TruckXH;
 
       {if FListB.IndexOf(FStockNo) >= 0 then
         FNextStatus := sFlag_TruckBFM; }
-      nStr := 'Select D_Value From %s Where D_Name=''%s'' and D_Value=''%s'' ';
-      nStr := Format(nStr, [sTable_SysDict, sFlag_NFStock, FStockNo]);
+      nStr := 'Select D_Value From %s Where ((D_Name=''%s'') or (D_Name=''%s'')) and D_Value=''%s'' ';
+      nStr := Format(nStr, [sTable_SysDict, sFlag_NFStock, sFlag_NFPurch, FStockNo]);
 
       with gDBConnManager.WorkerQuery(FDBConn, nStr) do
       if RecordCount > 0 then
@@ -7991,7 +8190,6 @@ begin
         FNextStatus := sFlag_TruckBFM;
       end;
       //ÏÖ³¡²»·¢»õÖ±½Ó¹ýÖØ
-      {$ENDIF}
 
       nSQL := MakeSQLByStr([
             SF('P_ID', nOut.FData),
@@ -8063,6 +8261,57 @@ begin
   begin
     with nPound[0] do
     begin
+      nStr := 'Select D_CusID,D_Value,D_Type From %s ' +
+              'Where D_Stock=''%s'' And D_Valid=''%s''';
+      nStr := Format(nStr, [sTable_Deduct, FStockNo, sFlag_Yes]);
+      //WriteLog(nStr);
+      with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+      if RecordCount > 0 then
+      begin
+        First;
+
+        while not Eof do
+        begin
+          if FieldByName('D_CusID').AsString = FCusID then
+            Break;
+          //¿Í»§+ÎïÁÏ²ÎÊýÓÅÏÈ
+
+          Next;
+        end;
+
+        if Eof then First;
+        //Ê¹ÓÃµÚÒ»Ìõ¹æÔò
+
+        if FMData.FValue > FPData.FValue then
+             nNet := FMData.FValue - FPData.FValue
+        else nNet := FPData.FValue - FMData.FValue;
+
+        nVal := 0;
+        //´ý¿Û¼õÁ¿
+        nStr := FieldByName('D_Type').AsString;
+
+        if nStr = sFlag_DeductFix then
+          nVal := FieldByName('D_Value').AsFloat;
+        //¶¨Öµ¿Û¼õ
+
+        if nStr = sFlag_DeductPer then
+        begin
+          nVal := FieldByName('D_Value').AsFloat;
+          nVal := nNet * nVal;
+          //WriteLog('¿Û¼õ¼ÆËã£º'+FloatToStr(nVal));
+        end; //±ÈÀý¿Û¼õ
+
+        if (nVal > 0) and (nNet > nVal) then
+        begin
+          nVal := Float2Float(nVal, cPrecision, False);
+          //½«°µ¿ÛÁ¿¿Û¼õÎª2Î»Ð¡Êý;
+          nAKVal := nVal;
+          if FMData.FValue > FPData.FValue then
+               FMData.FValue := (FMData.FValue*1000 - nVal*1000) / 1000
+          else FPData.FValue := (FPData.FValue*1000 - nVal*1000) / 1000;
+        end;
+      end;
+      
       nStr := SF('P_Order', FID);
       //where
 
@@ -8091,6 +8340,7 @@ begin
                 SF('D_MValue', FMData.FValue, sfVal),
                 SF('D_MDate', DateTime2Str(FMData.FDate)),
                 SF('D_MMan', FMData.FOperator),
+                SF('D_AKValue', nAKVal, sfVal),
                 SF('D_Value', nVal, sfVal)
                 ], sTable_OrderDtl, SF('D_ID', FID), False);
         FListA.Add(nSQL);
@@ -8117,7 +8367,7 @@ begin
         FListA.Add(nSQL);
       end;
 
-      if FYSValid <> sFlag_NO then  //ÑéÊÕ³É¹¦£¬µ÷ÕûÒÑÊÕ»õÁ¿
+      //if FYSValid <> sFlag_NO then  //ÑéÊÕ³É¹¦£¬µ÷ÕûÒÑÊÕ»õÁ¿
       begin
         nSQL := 'Update $OrderBase Set B_SentValue=B_SentValue+$Val ' +
                 'Where B_ID = (select O_BID From $Order Where O_ID=''$ID'')';
@@ -8205,8 +8455,24 @@ begin
   if FIn.FExtParam = sFlag_TruckBFM then //³ÆÁ¿Ã«ÖØ
   begin
     if Assigned(gHardShareData) then
+    begin
+      {$IFDEF GGJC}
       gHardShareData('TruckOut:' + nPound[0].FCard);
-    //°õ·¿´¦Àí×Ô¶¯³ö³§
+        //°õ·¿´¦Àí×Ô¶¯³ö³§
+        WriteLog('°õ·¿´¦Àí×Ô¶¯³ö³§');
+      {$ELSE}
+      nSQL := 'Select D_Value From %s Where D_Name=''AutoOutStock'' and D_Value=''%s''';
+      nSQL := Format(nSQL, [sTable_SysDict, nPound[0].FStockNo]);
+
+      with gDBConnManager.WorkerQuery(FDBConn, nSQL) do
+      if RecordCount > 0 then
+      begin
+        gHardShareData('TruckOut:' + nPound[0].FCard);
+        //°õ·¿´¦Àí×Ô¶¯³ö³§
+        WriteLog('°õ·¿´¦Àí×Ô¶¯³ö³§');
+      end;
+      {$ENDIF}
+    end;
   end;
   {$IFDEF QLS}
   {if (FIn.FExtParam = sFlag_TruckOut) and

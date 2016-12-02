@@ -4,6 +4,7 @@
 *******************************************************************************}
 unit UFormHYRecord;
 
+{$I Link.Inc}
 interface
 
 uses
@@ -98,6 +99,25 @@ type
     dxLayoutControl1Item7: TdxLayoutItem;
     EditQuaEnd: TcxTextEdit;
     dxLayoutControl1Item8: TdxLayoutItem;
+    Label1: TLabel;
+    Label2: TLabel;
+    cxTextEdit1: TcxTextEdit;
+    cxTextEdit2: TcxTextEdit;
+    Label3: TLabel;
+    Label4: TLabel;
+    cxTextEdit3: TcxTextEdit;
+    cxTextEdit4: TcxTextEdit;
+    Label5: TLabel;
+    Label6: TLabel;
+    cxTextEdit5: TcxTextEdit;
+    cxTextEdit6: TcxTextEdit;
+    Label7: TLabel;
+    cxTextEdit7: TcxTextEdit;
+    cxTextEdit8: TcxTextEdit;
+    Label8: TLabel;
+    cbxCenterID: TcxComboBox;
+    dxLayoutControl1Item9: TdxLayoutItem;
+    dxLayoutControl1Group4: TdxLayoutGroup;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure EditIDPropertiesButtonClick(Sender: TObject;
@@ -317,6 +337,23 @@ begin
     end;
   end;
 
+  if cbxCenterID.Properties.Items.Count < 1 then
+  begin
+    nStr := 'Select I_CenterID from %s ';
+    nStr := Format(nStr,[sTable_InventCenter]);
+    with FDM.QueryTemp(nStr) do
+    if RecordCount > 0 then
+    begin
+      First;
+      while not Eof do
+      begin
+        if Fields[0].AsString<> '' then
+          cbxCenterID.Properties.Items.Add(Fields[0].AsString);
+        Next;
+      end;
+    end;
+  end;
+
   if nID <> '' then
   begin
     nStr := 'Select * From %s Where R_ID=%s';
@@ -398,6 +435,15 @@ begin
     EditQuaEnd.SetFocus;
     ShowMsg('请填写有效的预警量', sHint); Exit;
   end;
+  {$IFDEF CXSY}
+  if cbxCenterID.ItemIndex < 0 then
+  begin
+    EditStock.SetFocus;
+    ShowMsg('请选择生产线', sHint); Exit;
+  end;
+  {$ELSE}
+  cbxCenterID.ItemIndex := -1;
+  {$ENDIF}
   
   if FRecordID = '' then
   begin
