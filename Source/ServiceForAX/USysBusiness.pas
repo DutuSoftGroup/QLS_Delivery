@@ -8,7 +8,8 @@ interface
 {$I Link.inc}
 uses
   Windows, DB, Classes, Controls, SysUtils, UBusinessPacker, UBusinessWorker,
-  UBusinessConst, ULibFun, UAdjustForm, USysLoger, uDM, USysDB, NativeXml,fServerForm;
+  UBusinessConst, ULibFun, UAdjustForm, USysLoger, uDM, USysDB, NativeXml,
+  fServerForm, UMgrDBConn;
 
 procedure WriteLog(const nEvent: string);
 function CallBusinessCommand(const nCmd: Integer; const nData,nExt: string;
@@ -29,11 +30,15 @@ function LoadAXCustomer(const nCusID,nDataAreaID:string):Boolean;//œ¬‘ÿ»˝Ω«√≥“◊ø
 function LoadAXSalesContract(const nContactId,nDataAreaID:string):Boolean;//œ¬‘ÿ»˝Ω«√≥“◊∫œÕ¨–≈œ¢
 function LoadAXSalesContLine(const nContactId,nDataAreaID:string):Boolean;//œ¬‘ÿ»˝Ω«√≥“◊∫œÕ¨–––≈œ¢
 function GetAXCustomer(const XMLPrimaryKey: Widestring):Boolean;//ªÒ»°øÕªß–≈œ¢
-function GetAXMaterails(const XMLPrimaryKey: Widestring):Boolean;//ªÒ»°øÕªß–≈œ¢
+function GetAXMaterails(const XMLPrimaryKey: Widestring):Boolean;//ªÒ»°ŒÔ¡œ–≈œ¢
+function GetAXProviders(const XMLPrimaryKey: Widestring):Boolean;//ªÒ»°π©”¶…Ã–≈œ¢
 function SetOnLineModel(nModel:Boolean):Boolean;//…Ë÷√‘⁄œﬂƒ£ Ω
 function GetOnLineModel:Boolean;//ªÒ»°‘⁄œﬂƒ£ Ω
 function GetAXTPRESTIGEMANAGE(const nCustAcc, nDataAreaID: string): Boolean;//‘⁄œﬂªÒ»°–≈”√∂Ó∂»£®øÕªß£©
 function GetAXTPRESTIGEMBYCONT(const nCustAcc, nDataAreaID, nContractId :string): Boolean;//‘⁄œﬂªÒ»°–≈”√∂Ó∂»£®øÕªß-∫œÕ¨£©
+//function GetAXLocationID(const XMLPrimaryKey: Widestring):Boolean;//ªÒ»°≤÷ø‚ID
+//function GetAXCenterID(const XMLPrimaryKey: Widestring):Boolean;//ªÒ»°…˙≤˙œﬂID
+function UpdateYKAmount(const XMLPrimaryKey: Widestring): Boolean;//∏¸–¬‘§ø€Ω∂Ó
 
 implementation
 
@@ -144,10 +149,8 @@ begin
     try
       FListA.Clear;
       try
-        //nStr := 'Select * From %s Where SalesId=''%s'' and DataAreaID=''%s'' and Recid=''%s'' ';
-        //nStr := Format(nStr, [sTable_AX_Sales, nSalesId, nDataAreaID, nRecid]);
-        nStr := 'Select * From %s Where Recid=''%s'' ';
-        nStr := Format(nStr, [sTable_AX_Sales, nRecid]);
+        nStr := 'Select * From %s Where SalesId=''%s'' and DataAreaID=''%s'' and Recid=''%s'' ';
+        nStr := Format(nStr, [sTable_AX_Sales, nSalesId, nDataAreaID, nRecid]);
         with qryRem do
         begin
           WriteLog(nStr);
@@ -243,6 +246,7 @@ begin
       end;
     finally
       FListA.Free;
+      qryRem.Active:=False;
     end;
   end;
 end;
@@ -303,10 +307,8 @@ begin
     try
       FListA.Clear;
       try
-        //nStr := 'Select * From %s Where SalesId=''%s'' and DataAreaID=''%s'' and Recid=''%s'' ';
-        //nStr := Format(nStr, [sTable_AX_SalLine, nSalesId, nDataAreaID, nRecid]);
-        nStr := 'Select * From %s Where Recid=''%s'' ';
-        nStr := Format(nStr, [sTable_AX_SalLine, nRecid]);
+        nStr := 'Select * From %s Where SalesId=''%s'' and DataAreaID=''%s'' and Recid=''%s'' ';
+        nStr := Format(nStr, [sTable_AX_SalLine, nSalesId, nDataAreaID, nRecid]);
         with qryRem do
         begin
           WriteLog(nStr);
@@ -335,6 +337,7 @@ begin
             Values['D_Price']:= FieldByName('SalesPrice').AsString;
             Values['D_Value']:= FieldByName('RemainSalesPhysical').AsString;
             Values['D_Blocked']:= FieldByName('Blocked').AsString;
+            Values['D_Memo']:= FieldByName('CMT_Notes').AsString;
           end;
         end;
         with qryLoc,FListA do
@@ -353,17 +356,19 @@ begin
                   ''',D_Price='''+Values['D_Price']+
                   ''',D_Value='''+Values['D_Value']+
                   ''',D_Blocked='''+Values['D_Blocked']+
+                  ''',D_Memo='''+Values['D_Memo']+
                   ''' where D_ZID=''%s'' and DataAreaID=''%s'' and D_RECID=''%s'' ';
             nStr := Format(nStr, [sTable_ZhiKaDtl, nSalesId, nDataAreaID, nRecid]);
           end else
           begin
             nStr:= 'Insert into %s (D_ZID,D_Type,D_StockNo,D_StockName,'+
-                   'D_SalesStatus,D_Price,D_Value,D_Blocked,DataAreaID,D_RECID) '+
+                   'D_SalesStatus,D_Price,D_Value,D_Blocked,D_Memo,'+
+                   'DataAreaID,D_RECID) '+
                    'values ('''+Values['D_ZID']+''','''+
                    Values['D_Type']+''','''+Values['D_StockNo']+''','''+
                    Values['D_StockName']+''','''+Values['D_SalesStatus']+''','''+
                    Values['D_Price']+''','''+Values['D_Value']+''','''+
-                   Values['D_Blocked']+''','''+
+                   Values['D_Blocked']+''','''+Values['D_Memo']+''','''+
                    nDataAreaID+''','''+nRecid+''')';
             nStr := Format(nStr, [sTable_ZhiKaDtl]);
           end;
@@ -381,6 +386,7 @@ begin
       end;
     finally
       FListA.Free;
+      qryRem.Active:=False;
     end;
   end;
 end;
@@ -429,8 +435,7 @@ begin
   finally
     nXML.Free;
   end;
-  //if (nXTEadjustBillNum='') or (nRefRecid='') or (nDataAreaID='') or (nRecId='') then
-  if nRecid='' then
+  if (nXTEadjustBillNum='') or (nRefRecid='') or (nDataAreaID='') or (nRecId='') then
   begin
     WriteLog(nXTEadjustBillNum+'|'+nRefRecid+'|'+nDataAreaID+'|'+nRecId);
     Result:=False;
@@ -447,10 +452,8 @@ begin
     try
       FListA.Clear;
       try
-        //nStr := 'Select * From %s Where XTEadjustBillNum=''%s'' and RefRecid=''%s'' and DataAreaID=''%s'' and RecId=''%s'' ';
-        //nStr := Format(nStr, [sTable_AX_SupAgre, nXTEadjustBillNum, nRefRecid, nDataAreaID, nRecId]);
-        nStr := 'Select * From %s Where RecId=''%s'' ';
-        nStr := Format(nStr, [sTable_AX_SupAgre, nRecId]);
+        nStr := 'Select * From %s Where XTEadjustBillNum=''%s'' and RefRecid=''%s'' and DataAreaID=''%s'' and RecId=''%s'' ';
+        nStr := Format(nStr, [sTable_AX_SupAgre, nXTEadjustBillNum, nRefRecid, nDataAreaID, nRecId]);
         with qryRem do
         begin
           WriteLog(nStr);
@@ -576,10 +579,8 @@ begin
     try
       FListA.Clear;
       try
-        //nStr := 'Select * From %s Where CustAccount=''%s'' and DataAreaID=''%s'' and RecId=''%s'' ';
-        //nStr := Format(nStr, [sTable_AX_CreLimLog, nCustAcc, nDataAreaID, nRecId]);
-        nStr := 'Select * From %s Where RecId=''%s'' ';
-        nStr := Format(nStr, [sTable_AX_CreLimLog, nRecId]);
+        nStr := 'Select * From %s Where CustAccount=''%s'' and DataAreaID=''%s'' and RecId=''%s'' ';
+        nStr := Format(nStr, [sTable_AX_CreLimLog, nCustAcc, nDataAreaID, nRecId]);
         with qryRem do
         begin
           WriteLog(nStr);
@@ -603,18 +604,16 @@ begin
             Values['C_SubTmp']:= FieldByName('XTSubTmp').AsString;
             values['C_SubPrest']:= FieldByName('PRESTIGEQUOTA').AsString;
             Values['C_Createdby']:= FieldByName('Createdby').AsString;
-            Values['C_Createdate']:= FieldByName('Createddate').AsString;
-            Values['C_Createtime']:= FieldByName('createdtime').AsString;
+            Values['C_Createdate']:= FieldByName('Createddatetime').AsString;
+            //Values['C_Createtime']:= FieldByName('createdtime').AsString;
             Values['C_YKAmount']:= FieldByName('YKAmount').AsString;
             Values['C_TransPlanID']:= FieldByName('CMT_TransPlanID').AsString;
           end;
         end;
         with qryLoc,FListA do
         begin
-          //nStr:='select * from %s where C_CusID=''%s'' and DataAreaID=''%s'' and RecID=''%s'' ';
-          //nStr := Format(nStr, [sTable_CustPresLog, nCustAcc, nDataAreaID, nRecId]);
-          nStr:='select * from %s where RecID=''%s'' ';
-          nStr := Format(nStr, [sTable_CustPresLog, nRecId]);
+          nStr:='select * from %s where C_CusID=''%s'' and DataAreaID=''%s'' and RecID=''%s'' ';
+          nStr := Format(nStr, [sTable_CustPresLog, nCustAcc, nDataAreaID, nRecId]);
           Close;
           SQL.Text:=nStr;
           Open;
@@ -623,13 +622,13 @@ begin
             nStr:= 'Insert into %s (C_CusID,C_SubCash,C_SubThreeBill,'+
                    'C_SubSixBil,C_SubTmp,C_SubPrest,C_Createdby,'+
                    'C_YKAmount,C_TransPlanID,'+
-                   'C_Createdate,C_Createtime,DataAreaID,RecID) '+
+                   'C_Createdate,DataAreaID,RecID) '+
                    'values ('''+Values['C_CusID']+''','''+Values['C_SubCash']+''','''+
                    Values['C_SubThreeBill']+''','''+Values['C_SubSixBil']+''','''+
                    Values['C_SubTmp']+''','''+Values['C_SubPrest']+''','''+
                    Values['C_Createdby']+''','''+
                    Values['C_YKAmount']+''','''+Values['C_TransPlanID']+''','''+
-                   Values['C_Createdate']+''','''+Values['C_Createtime']+''','''+
+                   Values['C_Createdate']+''','''+
                    nDataAreaID+''','''+nRecId+''')';
             nStr := Format(nStr, [sTable_CustPresLog]);
             WriteLog(nStr);
@@ -637,12 +636,9 @@ begin
             SQL.Text:=nStr;
             ExecSQL;
           end;
+          Result:=True;
           //if GetAXTPRESTIGEMANAGE(nCustAcc, nDataAreaID) then  WriteLog('['+nCustAcc+']‘⁄œﬂªÒ»°–≈”√∂Ó∂»£®øÕªß£©≥…π¶');
-          if CalCreLimCust(nCustAcc, nDataAreaID, nRecId) then
-          begin
-            Result:=True;
-            WriteLog('['+nCustAcc+']º∆À„–≈”√∂Ó∂»£®øÕªß£©≥…π¶');
-          end;
+          if CalCreLimCust(nCustAcc, nDataAreaID, nRecId) then  WriteLog('['+nCustAcc+']º∆À„–≈”√∂Ó∂»£®øÕªß£©≥…π¶');
         end;
       except
         on e:Exception do
@@ -680,7 +676,7 @@ begin
           begin
             nStr := '±‡∫≈Œ™[ %s ]µƒøÕªß–≈”√∂Ó∂»º«¬º≤ª¥Ê‘⁄.';
             nStr := Format(nStr, [nCustAcc]);
-            Result := False;
+            Result := True;
             WriteLog(nStr);
             Exit;
           end;
@@ -709,7 +705,7 @@ begin
             nStr:='update %s set C_CashBalance=%s,'+
                   'C_BillBalance3M=%s,'+
                   'C_BillBalance6M=%s,'+
-                  'C_TemporAmount=%s,'+
+                  'C_TemporBalance=%s,'+
                   'C_PrestigeQuota=%s,'+
                   'C_Date=''%s'' '+
                   ' where C_CusID=''%s'' and DataAreaID=''%s'' ';
@@ -720,7 +716,7 @@ begin
           end else
           begin
             nStr:='insert into %s (C_CusID,C_CashBalance,C_BillBalance3M,'+
-                  'C_BillBalance6M,C_TemporAmount,C_PrestigeQuota,C_Date,'+
+                  'C_BillBalance6M,C_TemporBalance,C_PrestigeQuota,C_Date,'+
                   'DataAreaID) '+
                   'values ('''+nCustAcc+''','''+Values['C_SubCash']+''','''+
                   Values['C_SubThreeBill']+''','''+Values['C_SubSixBil']+''','''+
@@ -794,7 +790,7 @@ begin
               nStr:='update %s set C_CashBalance=C_CashBalance+(%s),'+
                     'C_BillBalance3M=C_BillBalance3M+(%s),'+
                     'C_BillBalance6M=C_BillBalance6M+(%s),'+
-                    'C_TemporAmount=C_TemporAmount+(%s),'+
+                    'C_TemporBalance=C_TemporBalance+(%s),'+
                     'C_PrestigeQuota=C_PrestigeQuota+(%s),'+
                     'C_Date=''%s'',C_Man=''%s'' '+
                     ' where C_CusID=''%s'' and DataAreaID=''%s'' ';
@@ -806,7 +802,7 @@ begin
             end else
             begin
               nStr:='insert into %s (C_CusID,C_CashBalance,C_BillBalance3M,'+
-                    'C_BillBalance6M,C_TemporAmount,C_PrestigeQuota,C_Date,'+
+                    'C_BillBalance6M,C_TemporBalance,C_PrestigeQuota,C_Date,'+
                     'C_Man,DataAreaID) '+
                     'values ('''+nCustAcc+''','''+Values['C_SubCash']+''','''+
                     Values['C_SubThreeBill']+''','''+Values['C_SubSixBil']+''','''+
@@ -819,27 +815,6 @@ begin
             Close;
             SQL.Text:=nStr;
             ExecSQL;
-            nAXYKMouney:= StrToFloat(Values['C_YKAmount']);
-            if nAXYKMouney < 0 then
-            begin
-              nLID:='T'+Values['C_TransPlanID'];
-              nStr:='select L_Value*L_Price as L_TotalMoney from %s where L_ID=''%s'' ';
-              nStr := Format(nStr, [sTable_Bill, nLID]);
-              WriteLog(nStr);
-              Close;
-              SQL.Text:=nStr;
-              Open;
-              if RecordCount > 0 then
-              begin
-                nYKMouney:=FieldByName('L_TotalMoney').AsFloat;
-                nStr:='Update %s Set A_FreezeMoney=A_FreezeMoney-(%s) Where A_CID=''%s''';
-                nStr:= Format(nStr, [sTable_CusAccount, FormatFloat('0.00',nYKMouney), nCustAcc]);
-                WriteLog(nStr);
-                Close;
-                SQL.Text:=nStr;
-                ExecSQL;
-              end;
-            end;
           end;
           Result:=True;
         end;
@@ -945,8 +920,8 @@ begin
             values['C_SubPrest']:= FieldByName('PRESTIGEQUOTA').AsString;
             //Values['C_Subdate']:= FieldByName('XTSubdate').AsString;
             Values['C_Createdby']:= FieldByName('Createdby').AsString;
-            Values['C_Createdate']:= FieldByName('Createddate').AsString;
-            Values['C_Createtime']:= FieldByName('createdtime').AsString;
+            Values['C_Createdate']:= FieldByName('Createddatetime').AsString;
+            //Values['C_Createtime']:= FieldByName('createdtime').AsString;
             Values['C_ContractId']:=FieldByName('CMT_ContractId').AsString;
             Values['C_YKAmount']:= FieldByName('YKAmount').AsString;
             Values['C_TransPlanID']:= FieldByName('CMT_TransPlanID').AsString;
@@ -963,28 +938,24 @@ begin
           begin
             nStr:= 'Insert into %s (C_CusID,C_SubCash,C_SubThreeBill,'+
                    'C_SubSixBil,C_SubTmp,C_SubPrest,C_Createdby,C_Createdate,'+
-                   'C_YKAmount,C_TransPlanID,'+
-                   'C_Createtime,C_ContractId,DataAreaID,RecId) '+
+                   'C_YKAmount,C_TransPlanID,C_ContractId,DataAreaID,RecId) '+
                    'values ('''+Values['C_CusID']+''','''+Values['C_SubCash']+''','''+
                    Values['C_SubThreeBill']+''','''+Values['C_SubSixBil']+''','''+
                    Values['C_SubTmp']+''','''+Values['C_SubPrest']+''','''+
                    Values['C_Createdby']+''','''+Values['C_Createdate']+''','''+
                    Values['C_YKAmount']+''','''+Values['C_TransPlanID']+''','''+
-                   Values['C_Createtime']+''','''+Values['C_ContractId']+''','''+
-                   nDataAreaID+''','''+nRecId+''')';
+                   Values['C_ContractId']+''','''+nDataAreaID+''','''+nRecId+''')';
             nStr := Format(nStr, [sTable_ContPresLog]);
             WriteLog(nStr);
             Close;
             SQL.Text:=nStr;
             ExecSQL;
           end;
+          Result:=True;
           {if GetAXTPRESTIGEMBYCONT(nCustAcc, nDataAreaID, nContractId) then
             WriteLog('['+nCustAcc+','+nContractId+']‘⁄œﬂªÒ»°–≈”√∂Ó∂»£®øÕªß-∫œÕ¨£©≥…π¶'); }
           if CalCreLimCusCont(nCustAcc, nDataAreaID, nContractId, nRecId) then
-          begin
-            Result:=True;
             WriteLog('['+nCustAcc+','+nContractId+']º∆À„–≈”√∂Ó∂»£®øÕªß-∫œÕ¨£©≥…π¶');
-          end;
         end;
       except
         on e:Exception do
@@ -1051,7 +1022,7 @@ begin
             nStr:='update %s set C_CashBalance=%s,'+
                   'C_BillBalance3M=%s,'+
                   'C_BillBalance6M=%s,'+
-                  'C_TemporAmount=%s,'+
+                  'C_TemporBalance=%s,'+
                   'C_PrestigeQuota=%s,'+
                   'C_Date=''%s'' '+
                   ' where C_CusID=''%s'' and C_ContractId=''%s'' and DataAreaID=''%s'' ';
@@ -1062,7 +1033,7 @@ begin
           end else
           begin
             nStr:='insert into %s (C_CusID,C_ContractId,C_CashBalance,C_BillBalance3M,'+
-                  'C_BillBalance6M,C_TemporAmount,C_PrestigeQuota,C_Date,'+
+                  'C_BillBalance6M,C_TemporBalance,C_PrestigeQuota,C_Date,'+
                   'DataAreaID) '+
                   'values ('''+nCustAcc+''','''+nContractId+''','''+
                   Values['C_SubCash']+''','''+
@@ -1136,7 +1107,7 @@ begin
               nStr:='update %s set C_CashBalance=C_CashBalance+(%s),'+
                     'C_BillBalance3M=C_BillBalance3M+(%s),'+
                     'C_BillBalance6M=C_BillBalance6M+(%s),'+
-                    'C_TemporAmount=C_TemporAmount+(%s),'+
+                    'C_TemporBalance=C_TemporBalance+(%s),'+
                     'C_PrestigeQuota=C_PrestigeQuota+(%s),'+
                     'C_Date=''%s'',C_Man=''%s'' '+
                     ' where C_CusID=''%s'' and C_ContractId=''%s'' and DataAreaID=''%s'' ';
@@ -1148,7 +1119,7 @@ begin
             end else
             begin
               nStr:='insert into %s (C_CusID,C_ContractId,C_CashBalance,C_BillBalance3M,'+
-                    'C_BillBalance6M,C_TemporAmount,C_PrestigeQuota,C_Date,'+
+                    'C_BillBalance6M,C_TemporBalance,C_PrestigeQuota,C_Date,'+
                     'C_Man,DataAreaID) '+
                     'values ('''+nCustAcc+''','''+nContractId+''','''+
                     Values['C_SubCash']+''','''+
@@ -1162,27 +1133,6 @@ begin
             Close;
             SQL.Text:=nStr;
             ExecSQL;
-            nAXYKMouney:= StrToFloat(Values['C_YKAmount']);
-            if nAXYKMouney < 0 then
-            begin
-              nLID:='T'+Values['C_TransPlanID'];
-              nStr:='select L_Value*L_Price as L_TotalMoney from %s where L_ID=''%s'' ';
-              nStr := Format(nStr, [sTable_Bill, nLID]);
-              WriteLog(nStr);
-              Close;
-              SQL.Text:=nStr;
-              Open;
-              if RecordCount > 0 then
-              begin
-                nYKMouney:=FieldByName('L_TotalMoney').AsFloat;
-                nStr:='Update %s Set A_ConFreezeMoney=A_ConFreezeMoney-(%s) Where A_CID=''%s''';
-                nStr:= Format(nStr, [sTable_CusAccount, FormatFloat('0.00',nYKMouney), nCustAcc]);
-                WriteLog(nStr);
-                Close;
-                SQL.Text:=nStr;
-                ExecSQL;
-              end;
-            end;
           end;
           Result:=True;
         end;
@@ -1671,6 +1621,7 @@ begin
             Values['M_IntComOriSalesId']:= FieldByName('InterCompanyOriginalSalesId').AsString;
             Values['M_PurchType']:= FieldByName('PurchaseType').AsString;
             Values['M_Date']:= FormatDateTime('yyyy-mm-dd hh:mm:ss',Now);
+            Values['M_DState']:= FieldByName('DocumentState').AsString;
           end;
         end;
         with qryLoc,FListA do
@@ -1690,18 +1641,20 @@ begin
                   ''',M_TriangleTrade='''+Values['M_TriangleTrade']+
                   ''',M_IntComOriSalesId='''+Values['M_IntComOriSalesId']+
                   ''',M_PurchType='''+Values['M_PurchType']+
+                  ''',M_DState='''+Values['M_DState']+
                   ''',M_Date='''+Values['M_Date']+
                   ''' where M_ID=''%s'' and DataAreaID=''%s'' ';
             nStr := Format(nStr, [sTable_OrderBaseMain, nPurchId, nDataAreaID]);
           end else
           begin
             nStr:= 'Insert into %s (M_ID,M_ProID,M_ProName,M_ProPY,M_CID,M_BStatus,'+
-                   'M_TriangleTrade,M_IntComOriSalesId,M_PurchType,M_Date,DataAreaID) '+
+                   'M_TriangleTrade,M_IntComOriSalesId,M_PurchType,M_DState,M_Date,DataAreaID) '+
                    'values ('''+Values['M_ID']+''','''+Values['M_ProID']+''','''+
                    Values['M_ProName']+''','''+Values['M_ProPY']+''','''+
                    Values['M_CID']+''','''+
                    Values['M_BStatus']+''','''+Values['M_TriangleTrade']+''','''+
                    Values['M_IntComOriSalesId']+''','''+Values['M_PurchType']+''','''+
+                   Values['M_DState']+''','''+
                    Values['M_Date']+''','''+nDataAreaID+''')';
             nStr := Format(nStr, [sTable_OrderBaseMain]);
           end;
@@ -1832,11 +1785,13 @@ begin
           end else
           begin
             nStr:= 'Insert into %s (B_ID,B_StockNo,B_StockName,B_BStatus,'+
-                   'B_Value,B_SentValue,B_RestValue,B_Blocked,DataAreaID,B_RECID) '+
+                   'B_Value,B_SentValue,B_RestValue,B_Blocked,B_Date,'+
+                   'DataAreaID,B_RECID) '+
                    'values ('''+Values['B_ID']+''','''+Values['B_StockNo']+''','''+
                    Values['B_StockName']+''','''+Values['B_BStatus']+''','''+
                    Values['B_Value']+''','''+Values['B_SentValue']+''','''+
                    Values['B_RestValue']+''','''+Values['B_Blocked']+''','''+
+                   Values['B_Date']+''','''+
                    nDataAreaID+''','''+nRecid+''')';
             nStr := Format(nStr, [sTable_OrderBase]);
           end;
@@ -1915,8 +1870,8 @@ begin
     try
       FListA.Clear;
       try
-        nStr := 'Select AccountNum,Name,Phone,CreditMax,MandatoryCreditLimit,' +
-                'CellularPhone,ContactPersonId,CMT_Lawagencer,CMT_KHYH,CMT_KHZH '+
+        nStr := 'Select AccountNum,Name,CreditMax,MandatoryCreditLimit,' +
+                'ContactPersonId,CMT_KHYH,CMT_KHZH '+
                 'From %s where AccountNum=''%s'' and DataAreaID=''%s'' and RecID=''%s'' ';
         nStr := Format(nStr, [sTable_AX_Cust, nCustNum, nDataAreaID, nRecid]);
         with qryRem do
@@ -1938,11 +1893,11 @@ begin
             Values['C_ID']:= FieldByName('AccountNum').AsString;
             Values['C_Name']:= FieldByName('Name').AsString;
             Values['C_PY']:= GetPinYinOfStr(FieldByName('Name').AsString);
-            Values['C_FaRen']:= FieldByName('CMT_Lawagencer').AsString;
-            Values['C_Phone']:= FieldByName('Phone').AsString;
+            //Values['C_FaRen']:= FieldByName('CMT_Lawagencer').AsString;
+            //Values['C_Phone']:= FieldByName('Phone').AsString;
             Values['C_CredMax']:= FieldByName('CreditMax').AsString;
             Values['C_MaCredLmt']:= FieldByName('MandatoryCreditLimit').AsString;
-            Values['C_CelPhone']:= FieldByName('CellularPhone').AsString;
+            //Values['C_CelPhone']:= FieldByName('CellularPhone').AsString;
             Values['C_Account']:= FieldByName('CMT_KHZH').AsString;
             Values['C_XuNi']:= sFlag_No;
           end;
@@ -1958,23 +1913,22 @@ begin
           begin
             nStr:='update %s set C_Name='''+Values['C_Name']+
                   ''',C_PY='''+Values['C_PY']+
-                  ''',C_FaRen='''+Values['C_FaRen']+
-                  ''',C_Phone='''+Values['C_Phone']+
+                  //''',C_FaRen='''+Values['C_FaRen']+
+                  //''',C_Phone='''+Values['C_Phone']+
                   ''',C_CredMax='''+Values['C_CredMax']+
                   ''',C_MaCredLmt='''+Values['C_MaCredLmt']+
-                  ''',C_CelPhone='''+Values['C_CelPhone']+
+                  //''',C_CelPhone='''+Values['C_CelPhone']+
                   ''',C_Account='''+Values['C_Account']+
                   ''',C_XuNi='''+Values['C_XuNi']+
                   ''' where C_ID=''%s'' ';
             nStr := Format(nStr, [sTable_Customer, nCustNum]);
           end else
           begin
-            nStr:= 'Insert into %s (C_ID,C_Name,C_PY,C_FaRen,'+
-                   'C_Phone,C_CredMax,C_MaCredLmt,C_CelPhone,C_Account,C_XuNi) '+
+            nStr:= 'Insert into %s (C_ID,C_Name,C_PY,'+
+                   'C_CredMax,C_MaCredLmt,C_Account,C_XuNi) '+
                    'values ('''+Values['C_ID']+''','''+Values['C_Name']+''','''+
-                   Values['C_PY']+''','''+Values['C_FaRen']+''','''+
-                   Values['C_Phone']+''','''+Values['C_CredMax']+''','''+
-                   Values['C_MaCredLmt']+''','''+Values['C_CelPhone']+''','''+
+                   Values['C_PY']+''','''+Values['C_CredMax']+''','''+
+                   Values['C_MaCredLmt']+''','''+
                    Values['C_Account']+''','''+Values['C_XuNi']+''')';
             nStr := Format(nStr, [sTable_Customer]);
           end;
@@ -2007,6 +1961,126 @@ begin
       end;
     finally
       FListA.Free;
+    end;
+  end;
+end;
+
+//ªÒ»°π©”¶…Ã–≈œ¢
+function GetAXProviders(const XMLPrimaryKey: Widestring):Boolean;
+var nStr: string;
+    nIdx: Integer;
+    nXML: TNativeXml;
+    nNode, nTmp: TXmlNode;
+    nAccountNum,nRecid,nDataAreaID,nOperation:string;
+    FListA:TStrings;
+begin
+  nXML := TNativeXml.Create;
+  try
+    nXML.ReadFromString('<?xml version="1.0" encoding="UTF-8"?><DATA>'+XMLPrimaryKey+'</DATA>');
+    nNode := nXML.Root.FindNode('Primary');
+    if not Assigned(nNode) then
+    begin
+      Result:=False;
+      Exit;
+    end;
+    try
+      nAccountNum:= nNode.NodeByName('AccountNum').ValueAsString;
+    except
+      nAccountNum:= '';
+    end;
+    try
+      nRecid:= nNode.NodeByName('RecId').ValueAsString;
+    except
+      nRecid:='';
+    end;
+    try
+      nDataAreaID:= nNode.NodeByName('dataAreaId').ValueAsString;
+    except
+      nDataAreaID:='';
+    end;
+    try
+      nOperation:= UpperCase(nNode.NodeByName('Operation').ValueAsString);    //≤Ÿ◊˜¿‡–Õ£∫i->–¬‘ˆ u->∏¸–¬ d->…æ≥˝
+    except
+      nOperation:='';
+    end;
+  finally
+    nXML.Free;
+  end;
+  if (nAccountNum='') or (nRecid='') or (nDataAreaID='') then
+  begin
+    Result:=False;
+    WriteLog(nAccountNum+'/'+nDataAreaID);
+    Exit;
+  end;
+  if nOperation='D' then
+  begin
+    Result:=True;
+    Exit;
+  end;
+  with DM do
+  begin
+    FListA:=TStringList.Create;
+    try
+      FListA.Clear;
+      try
+        nStr := 'Select AccountNum,Name From %s where AccountNum=''%s'' and DataAreaID=''%s'' and RecID=''%s'' ';
+        nStr := Format(nStr, [sTable_AX_VEND, nAccountNum, nDataAreaID, nRecid]);
+        with qryRem do
+        begin
+          WriteLog(nStr);
+          Close;
+          SQL.Text:=nStr;
+          Open;
+          if RecordCount < 1 then
+          begin
+            nStr := '±‡∫≈Œ™[ %s ]µƒπ©”¶…Ã–≈œ¢≤ª¥Ê‘⁄.';
+            nStr := Format(nStr, [nAccountNum]);
+            Result := True;
+            WriteLog(nStr);
+            Exit;
+          end;
+          with FListA do
+          begin
+            Values['P_ID']:= FieldByName('AccountNum').AsString;
+            Values['P_Name']:= FieldByName('Name').AsString;
+            Values['P_PY']:= GetPinYinOfStr(FieldByName('Name').AsString);
+          end;
+        end;
+        with qryLoc,FListA do
+        begin
+          nStr:='select * from %s where P_ID=''%s'' ';
+          nStr := Format(nStr, [sTable_Provider, nAccountNum]);
+          Close;
+          SQL.Text:=nStr;
+          Open;
+          if RecordCount>0 then
+          begin
+            nStr:='update %s set P_Name='''+Values['P_Name']+
+                  ''',P_PY='''+Values['P_PY']+
+                  ''' where P_ID=''%s'' ';
+            nStr := Format(nStr, [sTable_Provider, nAccountNum]);
+          end else
+          begin
+            nStr:= 'Insert into %s (P_ID,P_Name,P_PY) '+
+                   'values ('''+Values['P_ID']+''','''+Values['P_Name']+''','''+
+                   Values['P_PY']+''')';
+            nStr := Format(nStr, [sTable_Provider]);
+          end;
+          WriteLog(nStr);
+          Close;
+          SQL.Text:=nStr;
+          ExecSQL;
+          Result:=True;
+        end;
+      except
+        on e:Exception do
+        begin
+          WriteLog(e.Message);
+        end;
+      end;
+    finally
+      FListA.Free;
+      qryRem.Active:=False;
     end;
   end;
 end;
@@ -2165,11 +2239,11 @@ begin
             Values['C_ID']:= FieldByName('AccountNum').AsString;
             Values['C_Name']:= FieldByName('Name').AsString;
             Values['C_PY']:= UpperCase(FieldByName('Name').AsString);
-            Values['C_FaRen']:= FieldByName('CMT_Lawagencer').AsString;
-            Values['C_Phone']:= FieldByName('Phone').AsString;
+            //Values['C_FaRen']:= FieldByName('CMT_Lawagencer').AsString;
+            //Values['C_Phone']:= FieldByName('Phone').AsString;
             Values['C_CredMax']:= FieldByName('CreditMax').AsString;
             Values['C_MaCredLmt']:= FieldByName('MandatoryCreditLimit').AsString;
-            Values['C_CelPhone']:= FieldByName('CellularPhone').AsString;
+            //Values['C_CelPhone']:= FieldByName('CellularPhone').AsString;
             Values['C_Account']:= FieldByName('CMT_KHZH').AsString;
             Values['C_XuNi']:= sFlag_No;
           end;
@@ -2185,23 +2259,22 @@ begin
           begin
             nStr:='update %s set C_Name='''+Values['C_Name']+
                   ''',C_PY='''+Values['C_PY']+
-                  ''',C_FaRen='''+Values['C_FaRen']+
-                  ''',C_Phone='''+Values['C_Phone']+
+                  //''',C_FaRen='''+Values['C_FaRen']+
+                  //''',C_Phone='''+Values['C_Phone']+
                   ''',C_CredMax='''+Values['C_CredMax']+
                   ''',C_MaCredLmt='''+Values['C_MaCredLmt']+
-                  ''',C_CelPhone='''+Values['C_CelPhone']+
+                  //''',C_CelPhone='''+Values['C_CelPhone']+
                   ''',C_Account='''+Values['C_Account']+
                   ''',C_XuNi='''+Values['C_XuNi']+
                   ''' where C_ID=''%s'' ';
             nStr := Format(nStr, [sTable_Customer, nCusID]);
           end else
           begin
-            nStr:= 'Insert into %s (C_ID,C_Name,C_PY,C_FaRen,'+
-                   'C_Phone,C_CredMax,C_MaCredLmt,C_CelPhone,C_Account,C_XuNi) '+
+            nStr:= 'Insert into %s (C_ID,C_Name,C_PY,'+
+                   'C_CredMax,C_MaCredLmt,C_Account,C_XuNi) '+
                    'values ('''+Values['C_ID']+''','''+Values['C_Name']+''','''+
-                   Values['C_PY']+''','''+Values['C_FaRen']+''','''+
-                   Values['C_Phone']+''','''+Values['C_CredMax']+''','''+
-                   Values['C_MaCredLmt']+''','''+Values['C_CelPhone']+''','''+
+                   Values['C_PY']+''','''+Values['C_CredMax']+''','''+
+                   Values['C_MaCredLmt']+''','''+
                    Values['C_Account']+''','''+Values['C_XuNi']+''')';
             nStr := Format(nStr, [sTable_Customer]);
           end;
@@ -2350,6 +2423,88 @@ begin
     if RecordCount>0 then
     begin
       if FieldByName('D_Value').AsString='N' then Result:=False;
+    end;
+  end;
+end;
+
+//∏¸–¬‘§ø€Ω∂Ó
+function UpdateYKAmount(const XMLPrimaryKey: Widestring): Boolean;
+var nStr, nLID, nCustAcc, nContQuota: string;
+    nIdx: Integer;
+    nXML: TNativeXml;
+    nNode, nTmp: TXmlNode;
+    nTRANSPLANID,nDataAreaID:string;
+    nYKMouney: Double;
+begin
+  nXML := TNativeXml.Create;
+  try
+    nXML.ReadFromString('<?xml version="1.0" encoding="UTF-8"?><DATA>'+XMLPrimaryKey+'</DATA>');
+    nNode := nXML.Root.FindNode('Primary');
+    if not Assigned(nNode) then
+    begin
+      Result:=False;
+      Exit;
+    end;
+
+    nTmp := nNode.NodeByName('TRANSPLANID');
+    if Assigned(nTmp) then
+      nTRANSPLANID:= nTmp.ValueAsString
+    else
+      nTRANSPLANID:= '';
+
+    nTmp := nNode.NodeByName('DataAreaID');
+    if Assigned(nTmp) then
+      nDataAreaID:= nTmp.ValueAsString
+    else
+      nDataAreaID:='';
+  finally
+    nXML.Free;
+  end;
+  if (nTRANSPLANID='') or (nDataAreaID='') then
+  begin
+    Result:=False;
+    WriteLog(nTRANSPLANID+'/'+nDataAreaID);
+    Exit;
+  end;
+  with DM do
+  begin
+    try
+      with qryLoc do
+      begin
+        nLID:='T'+nTRANSPLANID;
+        nStr:='select L_Value*L_Price as L_TotalMoney,L_CusID,L_ContQuota from %s where L_BDAX=''2'' and L_ID=''%s'' ';
+        nStr := Format(nStr, [sTable_Bill, nLID]);
+        WriteLog(nStr);
+        Close;
+        SQL.Text:=nStr;
+        Open;
+        if RecordCount > 0 then
+        begin
+          nYKMouney := FieldByName('L_TotalMoney').AsFloat;
+          nCustAcc := FieldByName('L_CusID').AsString;
+          nContQuota:= FieldByName('L_ContQuota').AsString;
+
+          if nContQuota = '1' then
+          begin
+            nStr:='Update %s Set A_ConFreezeMoney=A_ConFreezeMoney-(%s) Where A_CID=''%s''';
+            nStr:= Format(nStr, [sTable_CusAccount, FormatFloat('0.00',nYKMouney), nCustAcc]);
+          end else
+          begin
+            nStr:='Update %s Set A_FreezeMoney=A_FreezeMoney-(%s) Where A_CID=''%s''';
+            nStr:= Format(nStr, [sTable_CusAccount, FormatFloat('0.00',nYKMouney), nCustAcc]);
+          end;
+          WriteLog(nStr);
+          Close;
+          SQL.Text:=nStr;
+          ExecSQL;
+        end;
+        Result:=True;
+      end;
+    except
+      on e:Exception do
+      begin
+        WriteLog(e.Message);
+      end;
     end;
   end;
 end;

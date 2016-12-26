@@ -3047,7 +3047,7 @@ begin
   Result:= 0.0;
   nSQL := 'Select D_Value From %s Where D_ZID=''%s'' and D_RECID=''%s'' ';
   nSQL := Format(nSQL, [sTable_ZhiKaDtl, nZID, nRECID]);
-  WriteLog(nSQL);
+
   with FDM.QueryTemp(nSQL) do
   if RecordCount > 0 then
   begin

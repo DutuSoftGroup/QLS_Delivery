@@ -244,13 +244,11 @@ end;
 //Desc: 设置通道
 procedure TfFrameAutoPoundItem.SetTunnel(const nTunnel: PPTTunnelItem);
 var nStr: string;
-    nList: TStrings;
 begin
-  nList := TStringList.Create;
-  try
-    FPoundTunnel := nTunnel;
-    SplitStr(FPoundTunnel.FAdditional, nList, 0, ';');
-    nStr := nList.Values['EmptyWeight'];
+  FPoundTunnel := nTunnel;
+  if Assigned(FPoundTunnel.FOptions) then
+  begin
+    nStr := FPoundTunnel.FOptions.Values['EmptyWeight'];
 
     if IsNumber(nStr, True) then
          FEmptyPoundWeight := StrToFloat(nStr)
@@ -259,7 +257,7 @@ begin
     FEmptyPoundWeight := FEmptyPoundWeight / 1000;
     //unit kilo
 
-    nStr := nList.Values['EmptyIdleLong'];
+    nStr := FPoundTunnel.FOptions.Values['EmptyIdleLong'];
     if IsNumber(nStr, False) then
          FEmptyPoundIdleLong := StrToInt64(nStr)
     else FEmptyPoundIdleLong := 5;
@@ -267,17 +265,15 @@ begin
     FEmptyPoundIdleLong := FEmptyPoundIdleLong * 60 * 1000;
     //unit min
 
-    nStr := nList.Values['EmptyIdleShort'];
+    nStr := FPoundTunnel.FOptions.Values['EmptyIdleShort'];
     if IsNumber(nStr, False) then
          FEmptyPoundIdleShort := StrToInt64(nStr)
     else FEmptyPoundIdleShort := 10;
 
     FEmptyPoundIdleShort := FEmptyPoundIdleShort * 1000;
     //unit second
-    SetUIData(True);
-  finally
-    nList.Free;
   end;
+  SetUIData(True);
 end;
 
 //Desc: 重置界面数据
@@ -564,7 +560,7 @@ begin
   begin
     if gPoundTunnelManager.ActivePort(FPoundTunnel.FID, OnPoundDataEvent, True) then
     begin
-      if StrToFloat(EditValue.Text) > FPoundTunnel.FPoundZero then
+      if StrToFloat(EditValue.Text) > FPoundTunnel.FPort.FMinValue then
       begin
         gPoundTunnelManager.ClosePort(FPoundTunnel.FID);
         //关闭表头
@@ -820,27 +816,27 @@ begin
         nZhikaYL:=GetZhikaYL(FZhiKa,FRecID);
         if FType = sFlag_Dai then
         begin
-          if nZhikaYL<0 then
+          if nZhikaYL-FInnerData.FValue<0 then
           begin
             Result:=True;
             nStr := '车辆[ %s ]订单量不足,详情如下:' + #13#10#13#10 +
                     '订单量: %.2f吨,' + #13#10 +
                     '装车量: %.2f吨,' + #13#10 +
                     '需补交量: %.2f吨';
-            nStr := Format(nStr, [FTruck, nZhikaYL, FInnerData.FValue, Abs(nZhikaYL)]);
+            nStr := Format(nStr, [FTruck, nZhikaYL, FInnerData.FValue, Abs(nZhikaYL-FInnerData.FValue)]);
             nDaiWc:=nStr;
             Exit;
           end;
         end else
         begin
-          if nZhikaYL+FInnerData.FValue-nNet<0 then
+          if nZhikaYL-nNet<0 then
           begin
             Result:=True;
             nStr := '车辆[ %s ]订单量不足,详情如下:' + #13#10#13#10 +
                     '订单量: %.2f吨,' + #13#10 +
                     '装车量: %.2f吨,' + #13#10 +
                     '需补交量: %.2f吨';
-            nStr := Format(nStr, [FTruck, nZhikaYL, nNet, Abs(nZhikaYL+FInnerData.FValue-nNet)]);
+            nStr := Format(nStr, [FTruck, nZhikaYL, nNet, Abs(nZhikaYL-nNet)]);
             nDaiWc:=nStr;
             Exit;
           end;
@@ -1121,15 +1117,19 @@ begin
   if gSysParam.FIsManual then Exit;
   //手动时无效
   //{$IFDEF YDKP}
-  if nValue>FPoundTunnel.FPoundMax then
+  if FPoundTunnel.FPort.FMaxValue>0 then
   begin
-    WriteLog(FUIData.FTruck+'超重值: '+FormatFloat('0.00',nValue));
-    PlayVoice(FUIData.FTruck+'已超载,请到高吨位磅称重.');
-    FIsWeighting:= False;
-    FLastCardDone := GetTickCount;
-    nStr:=OpenDoor(FCardTmp,'1');
-    WritesysLog(FCardTmp+'开启出道闸');
-    Exit;
+    if nValue>FPoundTunnel.FPort.FMaxValue then
+    begin
+      WriteLog(FUIData.FTruck+'超重值: '+FormatFloat('0.00',nValue));
+      PlayVoice(FUIData.FTruck+'已超载,请到更高吨位磅称重.');
+      FIsWeighting:= False;
+
+      FLastCardDone := GetTickCount;
+      nStr:=OpenDoor(FCardTmp,'1');
+      WritesysLog(FCardTmp+'开启出道闸');
+      Exit;
+    end;
   end;
   //{$ENDIF}
   if FCardUsed = sFlag_Provide then
@@ -1170,7 +1170,7 @@ begin
     PlayVoice('车辆未停到位,请移动车辆.');
     Exit;
   end;
-  WriteSysLog(FormatFloat('0.00',nValue)+'  EmptyPoundWeight: '+Floattostr(FEmptyPoundWeight)+'  MaxWeight: '+FloatToStr(FPoundTunnel.FPoundMax));
+  
   FIsSaveing := True;
   FPoundVoice:='';
   if FCardUsed = sFlag_Provide then
@@ -1315,7 +1315,7 @@ end;
 
 procedure TfFrameAutoPoundItem.PlayVoice(const nStrtext: string);
 begin
-  if UpperCase(Additional.Values['Voice'])='NET' then
+  if UpperCase(FPoundTunnel.FOptions.Values['Voice'])='NET' then
        gNetVoiceHelper.PlayVoice(nStrtext, FPoundTunnel.FID, 'pound')
   else gVoiceHelper.PlayVoice(nStrtext);
 end;

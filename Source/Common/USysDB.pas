@@ -330,14 +330,13 @@ ResourceString
   sTable_KuWei           = 'Sys_KuWei';              //库位设置表
   sTable_CompanyArea     = 'Sys_CompanyArea';        //销售区域
 
-
   sTable_K3_SyncItem  = 'DL_SyncItem';               //数据同步项
   sTable_K3_Customer  = 'T_Organization';            //组织结构(客户)
 
-  sTable_AX_Cust      = 'CUSTTABLE';                 //客户信息
-  sTable_AX_VEND      = 'VENDTABLE';                 //供应商信息
+  sTable_AX_Cust      = 'ERP_CustTable';             //客户信息
+  sTable_AX_VEND      = 'ERP_VVendTable';            //供应商信息
+  sTable_AX_INVENT    = 'ERP_InventTable';           //物料信息
   sTable_AX_COMPANY   = 'COMPANYDOMAINLIST';         //公司信息
-  sTable_AX_INVENT    = 'INVENTTABLE';               //物料信息
   sTable_AX_INVENTDIM = 'INVENTDIM';                 //维度基础表
   sTable_AX_INVENTCENTER  = 'XTTINVENTCENTERTABLE';  //生产线基础表
   sTable_AX_INVENTLOCATION  = 'INVENTLOCATION';      //仓库基础表
@@ -641,8 +640,8 @@ ResourceString
    *.C_BillBalance3M：三个月票据余额
    *.C_BillBalance6M：六个月票据余额
    *.C_PrestigeQuota：固定信用余额
-   *.C_TemporBalance：临时授信金额
-   *.C_TemporAmount： 临时余额
+   *.C_TemporBalance：临时余额
+   *.C_TemporAmount： 临时授信金额
    *.C_WarningAmount：预警金额
    *.C_TemporTakeEffect：是否失效(0：否/1：是)
    *.C_FailureDate：失效日期
@@ -892,7 +891,7 @@ ResourceString
        'L_FYDELNUM int not null default((0)),L_EmptyOut char(1) not null default(''N''),'+
        'L_EOUTAX Char(1) not null default((0)),L_EOUTNUM int not null default((0)),'+
        'L_WorkOrder varchar(10), L_KHSBM varchar(20), L_OrgXSQYMC varChar(20),'+
-       'L_TriaTrade Char(1))';
+       'L_TriaTrade Char(1), L_ContQuota Char(1))';
   {-----------------------------------------------------------------------------
    交货单表: Bill
    *.R_ID: 编号
@@ -904,7 +903,7 @@ ResourceString
    *.L_SaleID,L_SaleMan:业务员
    *.L_Type: 类型(袋,散)
    *.L_StockNo: 物料编号
-   *.L_StockName: 物料描述 
+   *.L_StockName: 物料描述
    *.L_Value: 提货量
    *.L_Price: 提货单价
    *.L_ZKMoney: 占用纸卡限提(Y/N)
@@ -954,6 +953,7 @@ ResourceString
    *.L_KHSBM: 区域码
    *.L_OrgXSQYMC: 最终销售区域
    *.L_TriaTrade: 是否三角贸易
+   *.L_ContQuota: 是否专款专用（0：否 1：是）
   -----------------------------------------------------------------------------}
   sSQL_NewOrdBaseMain = 'Create Table $Table(R_ID $Inc, M_ID varChar(20),' +
        'M_CID varChar(50), M_BStatus Char(1), ' +

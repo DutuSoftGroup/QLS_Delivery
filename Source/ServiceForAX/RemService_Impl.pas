@@ -166,11 +166,21 @@ begin
     end else
     if BusinessType='EDB_0007' then
     begin
-        Result:=0;
+      if GetAXProviders(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
     end else
     if BusinessType='EDB_0008' then
     begin
       if GetAXMaterails(XMLPrimaryKey) then
+        Result:=0
+      else
+        Result:=-1;
+    end else
+    if BusinessType='EWS_0001' then
+    begin
+      if UpdateYKAmount(XMLPrimaryKey) then
         Result:=0
       else
         Result:=-1;

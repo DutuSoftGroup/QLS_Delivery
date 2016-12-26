@@ -126,6 +126,11 @@ begin
       SyncTime:= '00:00';
     end;
     gCompanyAct:= nNode.NodeByName('CompanyAct').ValueAsString;
+    nTmp := nNode.NodeByName('URLAddr');
+    if Assigned(nTmp) then
+      gURLAddr := nTmp.ValueAsString
+    else
+      gURLAddr := '';
   finally
     nXML.Free;
   end;
@@ -199,7 +204,7 @@ begin
     if FNumAXSync >= 3 then
       FNumAXSync := 0;
     //同步提货单到AX: 10次/小时
-    if FNumPoundSync>=7 then
+    if FNumPoundSync>=5 then
       FNumPoundSync:=0;
     //同步磅单到AX: 6次/小时
     //if FNumAXBASESync>=1 then
@@ -286,17 +291,10 @@ var
 begin
   try
     FListA.Clear;
-    {$IFDEF ZXKP}
     nSQL := 'select L_ID From %s where (L_EmptyOut<>''Y'') '+
-           // 'and ((L_InvLocationId<>''A'') and (L_InvLocationId<>'''')) '+
             'and ((L_FYAX <> ''1'') or (L_FYAX is null)) '+
+            'and (L_PDate is not null) '+
             'and L_FYNUM<=3 ';
-    {$ELSE}
-    nSQL := 'select L_ID From %s where (L_EmptyOut<>''Y'') '+
-            'and ((L_InvLocationId<>''A'') and (L_InvLocationId<>'''')) '+
-            'and ((L_FYAX <> ''1'') or (L_FYAX is null)) '+
-            'and L_FYNUM<=3 ';
-    {$ENDIF}
     nSQL := Format(nSQL,[sTable_Bill]);
     with gDBConnManager.WorkerQuery(FDBConn,nSql) do
     begin
@@ -439,6 +437,7 @@ begin
             'where (L_Status=''O'') and '+
             '(L_EmptyOut <> ''Y'') and '+
             '((L_BDAX <> ''1'') or (L_BDAX is null)) and '+
+            '(L_BDAX <> ''2'') and '+
             '(L_FYAX=''1'') and L_BDNUM<=3';
     nSQL := Format(nSQL,[sTable_Bill]);
     with gDBConnManager.WorkerQuery(FDBConn,nSql) do

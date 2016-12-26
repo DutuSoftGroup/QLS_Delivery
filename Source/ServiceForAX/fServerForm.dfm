@@ -47,6 +47,15 @@ object ServerForm: TServerForm
     TabOrder = 2
     OnClick = ChkModelClick
   end
+  object BtnConn: TButton
+    Left = 403
+    Top = 6
+    Width = 75
+    Height = 25
+    Caption = #25968#25454#36830#25509
+    TabOrder = 3
+    Visible = False
+  end
   object ROMessage: TROSOAPMessage
     Envelopes = <>
     SerializationOptions = [xsoSendUntyped, xsoStrictStructureFieldOrder, xsoDocument, xsoSplitServiceWsdls]

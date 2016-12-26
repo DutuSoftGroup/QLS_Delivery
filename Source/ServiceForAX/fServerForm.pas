@@ -17,6 +17,7 @@ type
     chkShowLog: TCheckBox;
     ChkModel: TCheckBox;
     ApplicationEvents1: TApplicationEvents;
+    BtnConn: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -33,7 +34,7 @@ var
 
 implementation
 uses
-  USysBusiness,uDM;
+  USysBusiness, uDM;
 
 {$R *.dfm}
 procedure WriteLog(const nEvent: string);

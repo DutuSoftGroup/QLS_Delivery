@@ -223,7 +223,14 @@ begin
     Values['Truck']         := Trim(EditTruck.Text);
     Values['Project']       := FCardData.Values['SQ_ID'];
 
+    {$IFDEF GLPURCH}
+    if gSysParam.FIsAdmin then
+      nCardType               := GetCtrlData(EditCardType)
+    else
+      nCardType               := 'L';
+    {$ELSE}
     nCardType               := GetCtrlData(EditCardType);
+    {$ENDIF}
     Values['CardType']      := nCardType;
 
     Values['SaleID']        := FCardData.Values['SQ_SaleID'];

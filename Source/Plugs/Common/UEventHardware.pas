@@ -69,7 +69,11 @@ begin
     gBlueReader.LoadConfig(nCfg + 'BlueCardReader.XML');
 
     nStr := '近距读头';
-    g02NReader.LoadConfig(nCfg + 'Readers.xml');
+    if not Assigned(g02NReader) then
+    begin
+      g02NReader := T02NReader.Create;
+      g02NReader.LoadConfig(nCfg + 'Readers.xml');
+    end;
 
     nStr := '计数器';
     gMultiJSManager.LoadFile(nCfg + 'JSQ.xml');

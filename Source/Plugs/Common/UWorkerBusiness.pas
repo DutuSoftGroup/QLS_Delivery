@@ -840,6 +840,7 @@ var nStr: string;
     nAXMoney: Double;
     nContQuota: string;//1 专款专用
     nCusID:string;
+    nFailureDate:TDateTime;
 begin
   nStr := 'Select zk.Z_Customer,sc.C_ID,sc.C_ContQuota From $ZK zk,$SC sc ' +
           'Where zk.Z_ID=''$CID'' and zk.Z_CID=sc.C_ID';
@@ -873,12 +874,34 @@ begin
       nAXMoney:=0;
     end else
     begin
-      nAXMoney:= FieldByName('C_CashBalance').AsFloat+
-                 FieldByName('C_BillBalance3M').AsFloat+
-                 FieldByName('C_BillBalance6M').AsFloat+
-                 FieldByName('C_TemporBalance').AsFloat+
-                 FieldByName('C_TemporAmount').AsFloat-
-                 FieldByName('C_PrestigeQuota').AsFloat;
+      nFailureDate := FieldByName('C_FailureDate').AsDateTime;
+      if (FieldByName('C_FailureDate').IsNull) or
+        (FieldByName('C_FailureDate').AsString='') or
+        (formatdatetime('yyyy-mm-dd',nFailureDate)='1900-01-01') or
+        (formatdatetime('yyyy-mm-dd',nFailureDate)='1899-01-01') then
+      begin
+        nAXMoney:= FieldByName('C_CashBalance').AsFloat+
+                     FieldByName('C_BillBalance3M').AsFloat+
+                     FieldByName('C_BillBalance6M').AsFloat-
+                     FieldByName('C_PrestigeQuota').AsFloat;
+      end else
+      begin
+        nFailureDate := StrToDateTime(formatdatetime('yyyy-mm-dd',nFailureDate)+' 23:59:59');
+        if nFailureDate >= Now then
+        begin
+          nAXMoney:= FieldByName('C_CashBalance').AsFloat+
+                     FieldByName('C_BillBalance3M').AsFloat+
+                     FieldByName('C_BillBalance6M').AsFloat+
+                     FieldByName('C_TemporBalance').AsFloat-
+                     FieldByName('C_PrestigeQuota').AsFloat;
+        end else
+        begin
+          nAXMoney:= FieldByName('C_CashBalance').AsFloat+
+                     FieldByName('C_BillBalance3M').AsFloat+
+                     FieldByName('C_BillBalance6M').AsFloat-
+                     FieldByName('C_PrestigeQuota').AsFloat;
+        end;
+      end;
     end;
   end;
 
@@ -898,20 +921,10 @@ begin
     end;
     if nContQuota ='1' then
     begin
-      nVal := nAXMoney-FieldByName('A_ConFreezeMoney').AsFloat
-           {+
-            FieldByName('A_InMoney').AsFloat -
-            FieldByName('A_ConOutMoney').AsFloat -
-            FieldByName('A_Compensation').AsFloat -
-            FieldByName('A_ConFreezeMoney').AsFloat; }
+      nVal := nAXMoney-FieldByName('A_ConFreezeMoney').AsFloat;
     end else
     begin
       nVal := nAXMoney-FieldByName('A_FreezeMoney').AsFloat;
-              {+
-              FieldByName('A_InMoney').AsFloat -
-              FieldByName('A_OutMoney').AsFloat -
-              FieldByName('A_Compensation').AsFloat -
-              FieldByName('A_FreezeMoney').AsFloat;}
     end;
     //xxxxx
 
@@ -2137,14 +2150,14 @@ begin
   try
     if FIn.FData='' then
     begin
-      nStr := 'Select AccountNum,Name,Phone,CreditMax,MandatoryCreditLimit,' +
-              'CellularPhone,ContactPersonId,CMT_Lawagencer,CMT_KHYH,CMT_KHZH '+
+      nStr := 'Select AccountNum,Name,CreditMax,MandatoryCreditLimit,' +
+              'CMT_KHYH,CMT_KHZH '+
               'From %s where DataAreaID=''%s'' ';
       nStr := Format(nStr, [sTable_AX_Cust, gCompanyAct]);
     end else
     begin
-      nStr := 'Select AccountNum,Name,Phone,CreditMax,MandatoryCreditLimit,' +
-              'CellularPhone,ContactPersonId,CMT_Lawagencer,CMT_KHYH,CMT_KHZH '+
+      nStr := 'Select AccountNum,Name,CreditMax,MandatoryCreditLimit,' +
+              'CMT_KHYH,CMT_KHZH '+
               'From %s where AccountNum=''%s'' and DataAreaID=''%s'' ';
       nStr := Format(nStr, [sTable_AX_Cust, FIn.FData, FIn.FExtParam]);
     end;
@@ -2160,11 +2173,8 @@ begin
         nStr := MakeSQLByStr([SF('C_ID', FieldByName('AccountNum').AsString),
                 SF('C_Name', FieldByName('Name').AsString),
                 SF('C_PY', GetPinYinOfStr(FieldByName('Name').AsString)),
-                SF('C_FaRen', FieldByName('CMT_Lawagencer').AsString),
-                SF('C_Phone', FieldByName('Phone').AsString),
                 SF('C_CredMax', FieldByName('CreditMax').AsString),
                 SF('C_MaCredLmt', FieldByName('MandatoryCreditLimit').AsString),
-                SF('C_CelPhone', FieldByName('CellularPhone').AsString),
                 SF('C_Bank', FieldByName('CMT_KHYH').AsString),
                 SF('C_Account', FieldByName('CMT_KHZH').AsString),
                 SF('C_XuNi', sFlag_No)
@@ -2179,11 +2189,8 @@ begin
         nStr := MakeSQLByStr([
                 SF('C_Name', FieldByName('Name').AsString),
                 SF('C_PY', GetPinYinOfStr(FieldByName('Name').AsString)),
-                SF('C_FaRen', FieldByName('CMT_Lawagencer').AsString),
-                SF('C_Phone', FieldByName('Phone').AsString),
                 SF('C_CredMax', FieldByName('CreditMax').AsString),
                 SF('C_MaCredLmt', FieldByName('MandatoryCreditLimit').AsString),
-                SF('C_CelPhone', FieldByName('CellularPhone').AsString),
                 SF('C_Bank', FieldByName('CMT_KHYH').AsString),
                 SF('C_Account', FieldByName('CMT_KHZH').AsString)
                 ], sTable_Customer, nStr, False);
@@ -2843,6 +2850,7 @@ var nStr: string;
     nIdx: Integer;
     nDBWorker: PDBWorker;
     nBalance:Double;
+    nFailureDate:TDateTime;
 begin
   Result := False;
   nBalance:=0.00;
@@ -2860,12 +2868,34 @@ begin
     if RecordCount > 0 then
     begin
       WriteLog('客户ID:'+Fields[0].AsString);
-      nBalance:=FieldByName('CashBalance').AsFloat+
-                FieldByName('BillBalanceThreeMonths').AsFloat+
-                FieldByName('BillBalancesixMonths').AsFloat+
-                FieldByName('TemporaryBalance').AsFloat-
-                FieldByName('PrestigeQuota').AsFloat-
-                FieldByName('YKAMOUNT').AsFloat;
+      nFailureDate := FieldByName('FailureDate').AsDateTime;
+      if (FieldByName('FailureDate').IsNull) or
+        (FieldByName('FailureDate').AsString='') or
+        (formatdatetime('yyyy-mm-dd',nFailureDate)='1900-01-01') or
+        (formatdatetime('yyyy-mm-dd',nFailureDate)='1899-01-01') then
+      begin
+        nBalance:=FieldByName('CashBalance').AsFloat+
+                  FieldByName('BillBalanceThreeMonths').AsFloat+
+                  FieldByName('BillBalancesixMonths').AsFloat-
+                  FieldByName('PrestigeQuota').AsFloat;
+      end else
+      begin
+        nFailureDate := StrToDateTime(formatdatetime('yyyy-mm-dd',nFailureDate)+' 23:59:59');
+        if nFailureDate >= Now then
+        begin
+          nBalance:=FieldByName('CashBalance').AsFloat+
+                    FieldByName('BillBalanceThreeMonths').AsFloat+
+                    FieldByName('BillBalancesixMonths').AsFloat+
+                    FieldByName('TemporaryBalance').AsFloat-
+                    FieldByName('PrestigeQuota').AsFloat;
+        end else
+        begin
+          nBalance:=FieldByName('CashBalance').AsFloat+
+                  FieldByName('BillBalanceThreeMonths').AsFloat+
+                  FieldByName('BillBalancesixMonths').AsFloat-
+                  FieldByName('PrestigeQuota').AsFloat;
+        end;
+      end;
       if nBalance>0 then
         FOut.FData:=sFlag_Yes
       else
@@ -2956,7 +2986,8 @@ var nStr: string;
     nDBWorker: PDBWorker;
     nPos: Integer;
     nCusID,nConID:string;
-    nBalance:Double;
+    nBalance: Double;
+    nFailureDate: TDateTime;
 begin
   Result := False;
   nDBWorker := nil;
@@ -2985,12 +3016,34 @@ begin
     if RecordCount > 0 then
     begin
       WriteLog('客户ID：'+Fields[0].AsString+'  合同ID；'+Fields[2].AsString);
-      nBalance:=FieldByName('CashBalance').AsFloat+
-                FieldByName('BillBalanceThreeMonths').AsFloat+
-                FieldByName('BillBalancesixMonths').AsFloat+
-                FieldByName('TemporaryBalance').AsFloat-
-                FieldByName('PrestigeQuota').AsFloat-
-                FieldByName('YKAMOUNT').AsFloat;
+      nFailureDate := FieldByName('FailureDate').AsDateTime;
+      if (FieldByName('FailureDate').IsNull) or
+        (FieldByName('FailureDate').AsString='') or
+        (formatdatetime('yyyy-mm-dd',nFailureDate)='1900-01-01') or
+        (formatdatetime('yyyy-mm-dd',nFailureDate)='1899-01-01') then
+      begin
+        nBalance:=FieldByName('CashBalance').AsFloat+
+                  FieldByName('BillBalanceThreeMonths').AsFloat+
+                  FieldByName('BillBalancesixMonths').AsFloat-
+                  FieldByName('PrestigeQuota').AsFloat;
+      end else
+      begin
+        nFailureDate := StrToDateTime(formatdatetime('yyyy-mm-dd',nFailureDate)+' 23:59:59');
+        if nFailureDate >= Now then
+        begin
+          nBalance:=FieldByName('CashBalance').AsFloat+
+                    FieldByName('BillBalanceThreeMonths').AsFloat+
+                    FieldByName('BillBalancesixMonths').AsFloat+
+                    FieldByName('TemporaryBalance').AsFloat-
+                    FieldByName('PrestigeQuota').AsFloat;
+        end else
+        begin
+          nBalance:=FieldByName('CashBalance').AsFloat+
+                  FieldByName('BillBalanceThreeMonths').AsFloat+
+                  FieldByName('BillBalancesixMonths').AsFloat-
+                  FieldByName('PrestigeQuota').AsFloat;
+        end;
+      end;
       if nBalance>0 then
         FOut.FData:=sFlag_Yes
       else
@@ -3350,6 +3403,7 @@ begin
                     SF('D_Price', FieldByName('SalesPrice').AsString),
                     SF('D_Value', FieldByName('RemainSalesPhysical').AsString),
                     SF('D_Blocked', FieldByName('Blocked').AsString),
+                    SF('D_Memo', FieldByName('CMT_Notes').AsString),
                     SF('DataAreaID', gCompanyAct)
                     ], sTable_ZhiKaDtl, '', True);
           FListA.Add(nStr);
@@ -3930,7 +3984,9 @@ begin
       nData := Format(nData, [FIn.FData]);
       WriteLog(nData);
       Exit;
-    end;
+    end;   
+    nLocationId := FieldByName('L_InvLocationId').AsString;
+    if nLocationId = '' then nLocationId := 'A';
     nStr:='<PRIMARY>'+
              '<PLANQTY>'+FieldByName('L_PlanQty').AsString+'</PLANQTY>'+
              '<VEHICLEId>'+FieldByName('L_Truck').AsString+'</VEHICLEId>'+
@@ -3943,13 +3999,13 @@ begin
              '<Destinationcode></Destinationcode>'+
              '<WMSLocationId></WMSLocationId>'+
              '<FYPlanStatus>'+nFYPlanStatus+'</FYPlanStatus>'+
-             '<InventLocationId>'+FieldByName('L_InvLocationId').AsString+'</InventLocationId>'+
+             '<InventLocationId>'+nLocationId+'</InventLocationId>'+
              '<xtDInventCenterId>'+FieldByName('L_InvCenterId').AsString+'</xtDInventCenterId>'+
            '</PRIMARY>';
     //WriteLog('发送值：'+nStr);
     //----------------------------------------------------------------------------
     try
-      nService:=GetBPM2ERPServiceSoap(True,'',nil);
+      nService:=GetBPM2ERPServiceSoap(True,gURLAddr,nil);
       //s:=nService.test;
       //WriteLog('测试返回值：'+s);
       //s:=nService.WRZS2ERPInfoTEST('WRZS_001',nStr,'000');
@@ -4012,6 +4068,8 @@ begin
       WriteLog(nData);
       Exit;
     end;
+    nLocationId := FieldByName('L_InvLocationId').AsString;
+    if nLocationId = '' then nLocationId := 'A';
     nStr:='<PRIMARY>'+
              '<PLANQTY>'+FieldByName('L_PlanQty').AsString+'</PLANQTY>'+
              '<VEHICLEId>'+FieldByName('L_Truck').AsString+'</VEHICLEId>'+
@@ -4024,13 +4082,13 @@ begin
              '<Destinationcode></Destinationcode>'+
              '<WMSLocationId></WMSLocationId>'+
              '<FYPlanStatus>'+nFYPlanStatus+'</FYPlanStatus>'+
-             '<InventLocationId>'+FieldByName('L_InvLocationId').AsString+'</InventLocationId>'+
+             '<InventLocationId>'+nLocationId+'</InventLocationId>'+
              '<xtDInventCenterId>'+FieldByName('L_InvCenterId').AsString+'</xtDInventCenterId>'+
            '</PRIMARY>';
     //WriteLog('发送值：'+nStr);
     //----------------------------------------------------------------------------
     try
-      nService:=GetBPM2ERPServiceSoap(True,'',nil);
+      nService:=GetBPM2ERPServiceSoap(True,gURLAddr,nil);
       //s:=nService.test;
       //WriteLog('测试返回值：'+s);
       //s:=nService.WRZS2ERPInfoTEST('WRZS_001',nStr,'000');
@@ -4093,6 +4151,8 @@ begin
       WriteLog(nData);
       Exit;
     end;
+    nLocationId := FieldByName('L_InvLocationId').AsString;
+    if nLocationId = '' then nLocationId := 'A';
     nStr:='<PRIMARY>'+
              '<PLANQTY>'+FieldByName('L_PlanQty').AsString+'</PLANQTY>'+
              '<VEHICLEId>'+FieldByName('L_Truck').AsString+'</VEHICLEId>'+
@@ -4105,13 +4165,13 @@ begin
              '<Destinationcode></Destinationcode>'+
              '<WMSLocationId></WMSLocationId>'+
              '<FYPlanStatus>'+nFYPlanStatus+'</FYPlanStatus>'+
-             '<InventLocationId>'+FieldByName('L_InvLocationId').AsString+'</InventLocationId>'+
+             '<InventLocationId>'+nLocationId+'</InventLocationId>'+
              '<xtDInventCenterId>'+FieldByName('L_InvCenterId').AsString+'</xtDInventCenterId>'+
            '</PRIMARY>';
     //WriteLog('发送值：'+nStr);
     //----------------------------------------------------------------------------
     try
-      nService:=GetBPM2ERPServiceSoap(True,'',nil);
+      nService:=GetBPM2ERPServiceSoap(True,gURLAddr,nil);
       nMsg:=nService.WRZS2ERPInfo('WRZS_001',nStr,'000');
       if nMsg=1 then
       begin
@@ -4147,18 +4207,18 @@ var nID,nIdx: Integer;
     nMsg:Integer;
     nCenterId,nLocationId:string;
     s,nHYDan:string;
-    nNetValue:Double;
-    nsWeightTime:string;
+    nNetValue, nYKMouney:Double;
+    nsWeightTime, nCustAcc, nContQuota:string;
 begin
   Result := False;
 
   nSQL := 'select a.L_ID,a.L_StockNo,a.L_Truck,a.L_PValue,a.L_MValue,a.L_Value,'+
           'a.L_InvCenterId,a.L_InvLocationId,a.L_CW,a.L_PlanQty,a.L_HYDan,a.L_Type,'+
-          'a.L_MMan,a.L_MDate,b.P_ID,a.L_ZhiKa,a.L_LineRecID,a.L_StockName'+
+          'a.L_MMan,a.L_MDate,b.P_ID,a.L_ZhiKa,a.L_LineRecID,a.L_StockName,'+
+          'L_Value*L_Price as L_TotalMoney,L_CusID,L_ContQuota'+
           ' From %s a,%s b '+
           ' where a.L_ID = ''%s'' and a.L_ID=b.P_Bill ';
   nSQL := Format(nSQL,[sTable_Bill,sTable_PoundLog,FIn.FData]);
-  //WriteLog(nSQL);
   with gDBConnManager.WorkerQuery(FDBConn, nSQL)  do
   try
     if RecordCount < 1 then
@@ -4177,7 +4237,6 @@ begin
     nHYDan:=FieldByName('L_HYDan').AsString;
     if nHYDan='' then
     begin
-      //WriteLog(FieldByName('L_StockName').AsString);
       if (Pos('熟料',FieldByName('L_StockName').AsString)>0) then
       begin
         nHYDan:='I';
@@ -4223,27 +4282,43 @@ begin
     nStr := nStr+'<InventLocationId>'+FieldByName('L_InvLocationId').AsString+'</InventLocationId>';
     nStr := nStr+'<xtDInventCenterId>'+FieldByName('L_InvCenterId').AsString+'</xtDInventCenterId>';
     nStr := nStr+'</PRIMARY>';
-    //nStr :=UTF8Encode(nStr);
-    //{$IFDEF DEBUG}
+    {$IFDEF DEBUG}
     WriteLog('发送值：'+nStr);
-    //{$ENDIF}
+    {$ENDIF}
     try
-      nService:=GetBPM2ERPServiceSoap(True,'',nil);
-      //s:=nService.test;
-      //WriteLog('测试返回值：'+s);
+      nService:=GetBPM2ERPServiceSoap(True,gURLAddr,nil);
       nMsg:=nService.WRZS2ERPInfo('WRZS_002',nStr,'000');
-      if nMsg=1 then
+      if (nMsg=1) or (nMsg=2) then
       begin
         WriteLog('返回值：'+IntToStr(nMsg)+','+FieldByName('P_ID').AsString+'同步成功');
-        nSQL:='update %s set L_BDAX=''1'',L_BDNUM=L_BDNUM+1 where L_ID = ''%s'' ';
-        nSQL := Format(nSQL,[sTable_Bill,FIn.FData]);
+        nSQL:='update %s set L_BDAX=''%s'',L_BDNUM=L_BDNUM+1 where L_ID = ''%s'' ';
+        nSQL := Format(nSQL,[sTable_Bill, IntToStr(nMsg), FIn.FData]);
         gDBConnManager.WorkerExec(FDBConn,nSQL);
+
+        if nMsg=1 then
+        begin
+          nYKMouney := FieldByName('L_TotalMoney').AsFloat;
+          nCustAcc := FieldByName('L_CusID').AsString;
+          nContQuota:= FieldByName('L_ContQuota').AsString;
+
+          if nContQuota = '1' then
+          begin
+            nSQL:='Update %s Set A_ConFreezeMoney=A_ConFreezeMoney-(%s) Where A_CID=''%s''';
+            nSQL:= Format(nSQL, [sTable_CusAccount, FormatFloat('0.00',nYKMouney), nCustAcc]);
+          end else
+          begin
+            nSQL:='Update %s Set A_FreezeMoney=A_FreezeMoney-(%s) Where A_CID=''%s''';
+            nSQL:= Format(nSQL, [sTable_CusAccount, FormatFloat('0.00',nYKMouney), nCustAcc]);
+          end;
+          gDBConnManager.WorkerExec(FDBConn,nSQL);
+          WriteLog('['+FIn.FData+']Release YKMoney: '+nSQL);
+        end;
         Result := True;
       end else
       begin
         WriteLog('返回值：'+IntToStr(nMsg)+','+FieldByName('P_ID').AsString+'同步失败');
-        nSQL:='update %s set L_BDNUM=L_BDNUM+1 where L_ID = ''%s'' ';
-        nSQL := Format(nSQL,[sTable_Bill,FIn.FData]);
+        nSQL:='update %s set L_BDAX=''%s'',L_BDNUM=L_BDNUM+1 where L_ID = ''%s'' ';
+        nSQL := Format(nSQL,[sTable_Bill, IntToStr(nMsg), FIn.FData]);
         gDBConnManager.WorkerExec(FDBConn,nSQL);
       end;
     except
@@ -4267,13 +4342,13 @@ var nID,nIdx: Integer;
     nsWeightTime:string;
 begin
   Result := False;
-  nSQL := 'select * From %s a, %s b where a.D_OID=b.O_ID and D_ID = ''%s'' ';
-  nSQL := Format(nSQL,[sTable_OrderDtl,sTable_Order,FIn.FData]);
+  nSQL := 'select * From %s a, %s b, %s c where a.D_OID=b.O_ID and a.D_ID=c.P_Order and a.D_ID = ''%s'' ';
+  nSQL := Format(nSQL,[sTable_OrderDtl,sTable_Order,sTable_PoundLog,FIn.FData]);
   with gDBConnManager.WorkerQuery(FDBConn, nSQL)  do
   try
     if RecordCount < 1 then
     begin
-      nData := '编号为[ %s ]的采购磅单不存在.';
+      nData := '采购单号为[ %s ]的采购磅单不存在.';
       nData := Format(nData, [FIn.FData]);
       Exit;
     end;
@@ -4296,30 +4371,30 @@ begin
     nStr := nStr+'<WeightTime>'+nsWeightTime+'</WeightTime>';
     nStr := nStr+'<WeightDate>'+FieldByName('D_MDate').AsString+'</WeightDate>';
     nStr := nStr+'<description></description>';
-    nStr := nStr+'<WeighingNum>'+copy(FieldByName('D_ID').AsString,2,10)+'</WeighingNum>';
+    nStr := nStr+'<WeighingNum>'+copy(FieldByName('P_ID').AsString,2,10)+'</WeighingNum>';
     nStr := nStr+'<tabletransporter></tabletransporter>';
     nStr := nStr+'<COMPANYID>'+gCompanyAct+'</COMPANYID>';
     nStr := nStr+'<TransportBill></TransportBill>';
     nStr := nStr+'<TransportBillQty></TransportBillQty>';
     nStr := nStr+'</PRIMARY>';
     //----------------------------------------------------------------------------
-    //nStr :=UTF8Encode(nStr);
-    //{$IFDEF DEBUG}
+    
+    {$IFDEF DEBUG}
     WriteLog('发送值：'+nStr);
-    //{$ENDIF}
+    {$ENDIF}
     try
-      nService:=GetBPM2ERPServiceSoap(True,'',nil);
+      nService:=GetBPM2ERPServiceSoap(True,gURLAddr,nil);
       nMsg:=nService.WRZS2ERPInfo('WRZS_003',nStr,'000');
       if nMsg=1 then
       begin
-        WriteLog('返回值：'+IntToStr(nMsg)+','+FieldByName('D_ID').AsString+'同步成功');
+        WriteLog('返回值：'+IntToStr(nMsg)+','+FieldByName('P_ID').AsString+'同步成功');
         nSQL:='update %s set D_BDAX=''1'',D_BDNUM=D_BDNUM+1 where D_ID = ''%s'' ';
         nSQL := Format(nSQL,[sTable_OrderDtl,FIn.FData]);
         gDBConnManager.WorkerExec(FDBConn,nSQL);
         Result := True;
       end else
       begin
-        WriteLog('返回值：'+IntToStr(nMsg)+','+FieldByName('D_ID').AsString+'同步失败');
+        WriteLog('返回值：'+IntToStr(nMsg)+','+FieldByName('P_ID').AsString+'同步失败');
         nSQL:='update %s set D_BDNUM=D_BDNUM+1 where D_ID = ''%s'' ';
         nSQL := Format(nSQL,[sTable_OrderDtl,FIn.FData]);
         gDBConnManager.WorkerExec(FDBConn,nSQL);
@@ -4327,7 +4402,7 @@ begin
     except
       on e:Exception do
       begin
-        nStr := FieldByName('D_ID').AsString+'采购磅单同步失败.';
+        nStr := FieldByName('P_ID').AsString+'销售磅单同步失败.';
         WriteLog('AX接口异常：'+#13#10+e.Message);
       end;
     end;
@@ -4335,6 +4410,7 @@ begin
 
   end;
 end;
+
 
 function TWorkerBusinessCommander.SyncVehicleNoAX(var nData: string):Boolean;//同步车号到AX
 var nID,nIdx: Integer;
@@ -4785,11 +4861,15 @@ begin
       Values['CusName'] := FieldByName('C_Name').AsString;
       Values['CusPY'] := FieldByName('C_PY').AsString;
     end;
+
     Values['ZKMoney'] := FieldByName('Z_OnlyMoney').AsString;
     Values['CompanyId'] := FieldByName('Z_CompanyId').AsString;
     Values['ContQuota'] := FieldByName('C_ContQuota').AsString;
+
     Values['ContractID'] := FieldByName('Z_CID').AsString;
+    Values['Area'] := FieldByName('Z_XSQYBM').AsString;
     Values['KHSBM'] := FieldByName('Z_KHSBM').AsString;
+    
     Values['OrgXSQYMC'] := FieldByName('Z_OrgXSQYMC').AsString;
   end;
 
@@ -5170,9 +5250,11 @@ begin
       //combine bill
       FListC.Text := PackerDecodeStr(FListB[nIdx]);
       //get bill info
-
+      if FListA.Values['LocationID']='' then FListA.Values['LocationID'] := 'A';
       nStr := MakeSQLByStr([SF('L_ID', nOut.FData),
               SF('L_ZhiKa', FListA.Values['ZhiKa']),
+              SF('L_Project', FListA.Values['Project']),
+
               SF('L_CusID', FListA.Values['CusID']),
               SF('L_CusName', FListA.Values['CusName']),
               SF('L_CusPY', FListA.Values['CusPY']),
@@ -5180,6 +5262,7 @@ begin
               SF('L_Type', FListC.Values['Type']),
               SF('L_StockNo', FListC.Values['StockNO']),
               SF('L_StockName', FListC.Values['StockName']),
+
               SF('L_Value', FListC.Values['Value'], sfVal),
               SF('L_PlanQty', FListC.Values['Value'], sfVal),
               SF('L_Price', FListC.Values['Price'], sfVal),
@@ -5188,21 +5271,29 @@ begin
               SF('L_ZKMoney', nFixMoney),
               SF('L_Truck', FListA.Values['Truck']),
               SF('L_Status', sFlag_BillNew),
+
               SF('L_Lading', FListA.Values['Lading']),
               SF('L_IsVIP', FListA.Values['IsVIP']),
               SF('L_Seal', FListA.Values['Seal']),
+
               SF('L_Man', FIn.FBase.FFrom.FUser),
               SF('L_Date', sField_SQLServer_Now, sfVal),
               SF('L_IfHYPrint', FListA.Values['IfHYprt']),
+
               SF('L_HYDan', FListC.Values['SampleID']),
               SF('L_SalesType', FListA.Values['SalesType']),
               SF('L_InvCenterId', FListA.Values['CenterID']),
+
               SF('L_InvLocationId', FListA.Values['LocationID']),
+              SF('L_Area', FListA.Values['Area']),
               SF('L_KHSBM', FListA.Values['KHSBM']),
               SF('L_JXSTHD', FListA.Values['JXSTHD']),
+
               SF('L_OrgXSQYMC', FListA.Values['OrgXSQYMC']),
               SF('L_CW', FListA.Values['KuWei']),
-              SF('L_TriaTrade', FListA.Values['TriaTrade'])
+              SF('L_TriaTrade', FListA.Values['TriaTrade']),
+
+              SF('L_ContQuota', FListA.Values['ContQuota'])
               ], sTable_Bill, '', True);
       gDBConnManager.WorkerExec(FDBConn, nStr);
 
@@ -6623,7 +6714,7 @@ begin
               SF('L_HYDan', FSampleID),
               SF('L_EmptyOut', FYSValid),
               SF('L_WorkOrder', FWorkOrder),
-              SF('L_InvLocationId', FLocationID),
+              //SF('L_InvLocationId', FLocationID),
               SF('L_CW', FKw)
               ], sTable_Bill, SF('L_ID', FID), False);
       {$ENDIF}
@@ -6659,7 +6750,7 @@ begin
               SF('L_HYDan', FSampleID),
               SF('L_EmptyOut', FYSValid),
               SF('L_WorkOrder', FWorkOrder),
-              SF('L_InvLocationId', FLocationID),
+              //SF('L_InvLocationId', FLocationID),
               SF('L_CW', FKw)
               ], sTable_Bill, SF('L_ID', FID), False);
       {$ENDIF}
@@ -6745,7 +6836,7 @@ begin
                 end;
                 WriteLog(nBills[0].FID+'在线资金：'+Floattostr(nAxMoney));
                 //WriteLog(nBills[0].FCusID+'冻结资金：'+Floattostr(Float2Float(FPrice * FValue, cPrecision, False)));
-                nAxMoney:=nAxMoney+Float2Float(FPrice * FValue, cPrecision, False);
+                //nAxMoney:=nAxMoney+Float2Float(FPrice * FValue, cPrecision, False);
               end;
             end else
             begin
@@ -6777,7 +6868,7 @@ begin
                 end;
                 WriteLog(nBills[0].FID+'在线资金：'+Floattostr(nAxMoney));
                 //WriteLog(nBills[0].FCusID+'冻结资金：'+Floattostr(Float2Float(FPrice * FValue, cPrecision, False)));
-                nAxMoney:=nAxMoney+Float2Float(FPrice * FValue, cPrecision, False);
+                //nAxMoney:=nAxMoney+Float2Float(FPrice * FValue, cPrecision, False);
               end;
               if not TWorkerBusinessCommander.CallMe(cBC_GetCustomerMoney,  //本地获取客户资金额度
                nBills[0].FZhiKa, '', @nOut) then

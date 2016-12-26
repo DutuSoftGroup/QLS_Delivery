@@ -247,8 +247,8 @@ begin
         HintLabel.Caption := nT.FName;
         PoundTunnel := nT;
 
-        Additional.Clear;
-        SplitStr(nT.FAdditional, Additional, 0, ';', False);
+        //Additional.Clear;
+        //SplitStr(nT.FAdditional, Additional, 0, ';', False);
       end;
     end;
   end;
