@@ -838,10 +838,11 @@ ResourceString
 
   sSQL_NewZhiKaDtl = 'Create Table $Table(R_ID $Inc, D_ZID varChar(15),' +
        'D_Type Char(1), D_StockNo varChar(20), D_StockName varChar(80),' +
-       'D_Price $Float, D_Value $Float, D_PPrice $Float, ' +
+       'D_Price $Float, D_Value $Float, D_PPrice $Float, D_TotalValue $Float,' +
        'D_TPrice Char(1) Default ''Y'', D_LineNum numeric(28, 12) Default 0,'+
        'D_SalesStatus int Default(0), DATAAREAID varChar(3),'+
-       'D_RECID bigint not null default ((0)),D_Blocked int not null default((0)))';
+       'D_RECID bigint not null default ((0)),D_Blocked int not null default((0)),'+
+       'D_Memo varChar(200))';
   {-----------------------------------------------------------------------------
    纸卡明细:ZhiKaDtl
    *.R_ID:记录编号
@@ -851,12 +852,14 @@ ResourceString
    *.D_Price:单价
    *.D_Value:办理量
    *.D_PPrice:调价前单价
+   *.D_TotalValue: 订单总量
    *.D_TPrice:允许调价
    *.D_LineNum:行号
    *.D_RECID:行编码
    *.D_SalesStatus:行状态
    *.DATAAREAID: 账套
    *.D_Blocked：已停止
+   *.D_Memo: 备注
   -----------------------------------------------------------------------------}
 
   sSQL_NewBill = 'Create Table $Table(R_ID $Inc, L_ID varChar(20),' +

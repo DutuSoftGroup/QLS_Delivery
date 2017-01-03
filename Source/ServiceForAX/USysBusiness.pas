@@ -338,6 +338,7 @@ begin
             Values['D_Value']:= FieldByName('RemainSalesPhysical').AsString;
             Values['D_Blocked']:= FieldByName('Blocked').AsString;
             Values['D_Memo']:= FieldByName('CMT_Notes').AsString;
+            Values['D_TotalValue']:= FieldByName('SalesQty').AsString;
           end;
         end;
         with qryLoc,FListA do
@@ -354,7 +355,7 @@ begin
                   ''',D_StockName='''+Values['D_StockName']+
                   ''',D_SalesStatus='''+Values['D_SalesStatus']+
                   ''',D_Price='''+Values['D_Price']+
-                  ''',D_Value='''+Values['D_Value']+
+                  ''',D_TotalValue='''+Values['D_TotalValue']+
                   ''',D_Blocked='''+Values['D_Blocked']+
                   ''',D_Memo='''+Values['D_Memo']+
                   ''' where D_ZID=''%s'' and DataAreaID=''%s'' and D_RECID=''%s'' ';
@@ -362,12 +363,13 @@ begin
           end else
           begin
             nStr:= 'Insert into %s (D_ZID,D_Type,D_StockNo,D_StockName,'+
-                   'D_SalesStatus,D_Price,D_Value,D_Blocked,D_Memo,'+
-                   'DataAreaID,D_RECID) '+
+                   'D_SalesStatus,D_Price,D_Value,D_TotalValue,D_Blocked,'+
+                   'D_Memo,DataAreaID,D_RECID) '+
                    'values ('''+Values['D_ZID']+''','''+
                    Values['D_Type']+''','''+Values['D_StockNo']+''','''+
                    Values['D_StockName']+''','''+Values['D_SalesStatus']+''','''+
                    Values['D_Price']+''','''+Values['D_Value']+''','''+
+                   Values['D_TotalValue']+''','''+
                    Values['D_Blocked']+''','''+Values['D_Memo']+''','''+
                    nDataAreaID+''','''+nRecid+''')';
             nStr := Format(nStr, [sTable_ZhiKaDtl]);
@@ -1756,8 +1758,8 @@ begin
             Values['B_StockName']:= FieldByName('Name').AsString;
             Values['B_BStatus']:= FieldByName('PurchStatus').AsString;
             Values['B_Value']:= FieldByName('QtyOrdered').AsString;
-            Values['B_SentValue']:= FieldByName('PurchReceivedNow').AsString;
-            Values['B_RestValue']:= FieldByName('RemainPurchPhysical').AsString;
+            //Values['B_SentValue']:= FieldByName('PurchReceivedNow').AsString;
+            //Values['B_RestValue']:= FieldByName('RemainPurchPhysical').AsString;
             Values['B_Blocked']:= FieldByName('Blocked').AsString;
             Values['B_Date']:= FormatDateTime('yyyy-mm-dd hh:mm:ss',Now);
           end;
@@ -1776,8 +1778,6 @@ begin
                   ''',B_StockName='''+Values['B_StockName']+
                   ''',B_BStatus='''+Values['B_BStatus']+
                   ''',B_Value='''+Values['B_Value']+
-                  //''',B_SentValue='''+Values['B_SentValue']+
-                  ''',B_RestValue='''+Values['B_RestValue']+
                   ''',B_Blocked='''+Values['B_Blocked']+
                   ''',B_Date='''+Values['B_Date']+
                   ''' where B_ID=''%s'' and DataAreaID=''%s'' and B_RECID=''%s'' ';
@@ -1785,13 +1785,12 @@ begin
           end else
           begin
             nStr:= 'Insert into %s (B_ID,B_StockNo,B_StockName,B_BStatus,'+
-                   'B_Value,B_SentValue,B_RestValue,B_Blocked,B_Date,'+
+                   'B_Value,B_Blocked,B_Date,'+
                    'DataAreaID,B_RECID) '+
                    'values ('''+Values['B_ID']+''','''+Values['B_StockNo']+''','''+
                    Values['B_StockName']+''','''+Values['B_BStatus']+''','''+
-                   Values['B_Value']+''','''+Values['B_SentValue']+''','''+
-                   Values['B_RestValue']+''','''+Values['B_Blocked']+''','''+
-                   Values['B_Date']+''','''+
+                   Values['B_Value']+''','''+
+                   Values['B_Blocked']+''','''+Values['B_Date']+''','''+
                    nDataAreaID+''','''+nRecid+''')';
             nStr := Format(nStr, [sTable_OrderBase]);
           end;
@@ -2493,6 +2492,13 @@ begin
             nStr:='Update %s Set A_FreezeMoney=A_FreezeMoney-(%s) Where A_CID=''%s''';
             nStr:= Format(nStr, [sTable_CusAccount, FormatFloat('0.00',nYKMouney), nCustAcc]);
           end;
+          WriteLog(nStr);
+          Close;
+          SQL.Text:=nStr;
+          ExecSQL;
+
+          nStr:='Update %s Set L_BDAX=''1'' Where L_ID=''%s'' ';
+          nStr:= Format(nStr, [sTable_Bill, nLID]);
           WriteLog(nStr);
           Close;
           SQL.Text:=nStr;

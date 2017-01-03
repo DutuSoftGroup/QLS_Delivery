@@ -321,6 +321,8 @@ function GetNeiDao(const nStockNo:string):Boolean;
 //获取内倒物料
 function GetDaoChe(const nStockNo:string):Boolean;
 //获取倒车下磅物料
+function GetPurchRestValue(const nRecID:string):Double;
+//获取采购订单余量
 
 implementation
 
@@ -3052,6 +3054,22 @@ begin
   if RecordCount > 0 then
   begin
     Result:=FieldByName('D_Value').AsFloat;
+  end;
+end;
+
+//获取采购订单余量
+function GetPurchRestValue(const nRecID:string):Double;
+var
+  nSQL:string;
+begin
+  Result:= 0.0;
+  nSQL := 'Select B_RestValue From %s Where B_RecID=''%s'' ';
+  nSQL := Format(nSQL, [sTable_OrderBase, nRecID]);
+  WriteLog(nSQL);
+  with FDM.QueryTemp(nSQL) do
+  if RecordCount > 0 then
+  begin
+    Result:=FieldByName('B_RestValue').AsFloat;
   end;
 end;
 

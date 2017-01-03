@@ -2329,16 +2329,15 @@ begin
 
   nDBWorker := nil;
   try
-    nStr := 'Select ItemId,ItemName,ItemGroupId,Weighning From '+sTable_AX_INVENT+
-            ' where DataAreaID='''+gCompanyAct+''' and ITEMGROUPID like ''Y%'' ';
-    //nStr := Format(nStr, [sTable_AX_INVENT, gCompanyAct]);
+    nStr := 'Select ItemId,ItemName,ItemGroupId,Weighning From %s '+
+            'where DataAreaID=''%s'' and Weighning=''1'' ';
+    nStr := Format(nStr, [sTable_AX_INVENT, gCompanyAct]);
     //xxxxx
 
     with gDBConnManager.SQLQuery(nStr, nDBWorker, sFlag_DB_AX) do
     if RecordCount > 0 then
     begin
       First;
-
       while not Eof do
       begin
         nStr := MakeSQLByStr([SF('M_ID', Fields[0].AsString),
@@ -3402,6 +3401,7 @@ begin
                     SF('D_SalesStatus', FieldByName('SalesStatus').AsString),
                     SF('D_Price', FieldByName('SalesPrice').AsString),
                     SF('D_Value', FieldByName('RemainSalesPhysical').AsString),
+                    SF('D_TotalValue', FieldByName('SalesQty').AsString),
                     SF('D_Blocked', FieldByName('Blocked').AsString),
                     SF('D_Memo', FieldByName('CMT_Notes').AsString),
                     SF('DataAreaID', gCompanyAct)
@@ -4002,7 +4002,7 @@ begin
              '<InventLocationId>'+nLocationId+'</InventLocationId>'+
              '<xtDInventCenterId>'+FieldByName('L_InvCenterId').AsString+'</xtDInventCenterId>'+
            '</PRIMARY>';
-    //WriteLog('发送值：'+nStr);
+    WriteLog('发送值：'+nStr);
     //----------------------------------------------------------------------------
     try
       nService:=GetBPM2ERPServiceSoap(True,gURLAddr,nil);
@@ -5112,7 +5112,7 @@ var nStr,nSQL,nFixMoney: string;
     nVal,nMoney: Double;
     nOut: TWorkerBusinessCommand;
     nBxz: Boolean;
-    nAxMoney: Double;
+    nAxMoney, nSendValue: Double;
     nAxMsg,nOnLineModel: string;
 begin
   Result := False;
@@ -5184,6 +5184,17 @@ begin
         //nFixMoney := nOut.FExtParam;
         nFixMoney := sFlag_No;
         //Customer money
+      end;
+    end;
+    if nBxz and (nOnLineModel=sFlag_Yes) then
+    begin
+      nStr := 'select SUM(L_Value*L_Price) as L_TotalMoney from %s where L_BDAX <>''1'' and L_CusID=''%s'' ';
+      nStr := Format(nStr,[sTable_Bill, FListA.Values['CusID']]);
+      with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+      if RecordCount > 0 then
+      begin
+        nAxMoney := nAxMoney - Fields[0].AsFloat;
+        WriteLog(FListA.Values['CusID']+': '+FloatToStr(nAxMoney));
       end;
     end;
   end;
@@ -5390,71 +5401,29 @@ begin
       end;
     end;
 
-    nStr := 'Update %s Set D_Value=D_Value-%s Where D_ZID=''%s''';
-    nStr := Format(nStr, [sTable_ZhiKaDtl, FListC.Values['Value'],
-            FListA.Values['ZhiKa']]);
-    //xxxxx
-    gDBConnManager.WorkerExec(FDBConn, nStr);
-
     nIdx := Length(FOut.FData);
     if Copy(FOut.FData, nIdx, 1) = ',' then
       System.Delete(FOut.FData, nIdx, 1);
     //xxxxx
-    
     FDBConn.FConn.CommitTrans;
+
+    nStr := 'select IsNull(SUM(L_Value),''0'') as SendValue from %s where L_LineRecID=''%s'' ';
+    nStr := Format(nStr,[sTable_Bill, FListC.Values['RECID']]);
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    if RecordCount > 0 then
+    begin
+      nSendValue := Fields[0].AsFloat;
+    end;
+
+    nStr := 'Update %s Set D_Value=D_TotalValue-(%.2f) Where D_RECID=''%s''';
+    nStr := Format(nStr, [sTable_ZhiKaDtl, nSendValue, FListC.Values['RECID']]);
+    gDBConnManager.WorkerExec(FDBConn, nStr);
+
     Result := True;
   except
     FDBConn.FConn.RollbackTrans;
     raise;
   end;
-
-  {$IFDEF XAZL}
-  if FListA.Values['BuDan'] = sFlag_Yes then //补单
-  try
-    nSQL := AdjustListStrFormat(FOut.FData, '''', True, ',', False);
-    //bill list
-
-    if not TWorkerBusinessCommander.CallMe(cBC_SyncStockBill, nSQL, '', @nOut) then
-      raise Exception.Create(nOut.FData);
-    //xxxxx
-  except
-    nStr := 'Delete From %s Where L_ID In (%s)';
-    nStr := Format(nStr, [sTable_Bill, nSQL]);
-    gDBConnManager.WorkerExec(FDBConn, nStr);
-    raise;
-  end;
-  {$ENDIF}
-
-  {$IFDEF MicroMsg}
-  with FListC do
-  begin
-    Clear;
-    Values['bill'] := FOut.FData;
-    Values['company'] := gSysParam.FHintText;
-  end;
-
-  if FListA.Values['BuDan'] = sFlag_Yes then
-       nStr := cWXBus_OutFact
-  else nStr := cWXBus_MakeCard;
-
-  gWXPlatFormHelper.WXSendMsg(nStr, FListC.Text);
-  {$ENDIF}
-  {$IFDEF QLS}
-  {if (Result) and (nOnLineModel=sFlag_Yes) then
-  begin
-    try
-      if not TWorkerBusinessCommander.CallMe(cBC_SyncFYBillAX,FOut.FData,'',@nOut) then
-      begin
-        WriteLog(FOut.FData+'提货单同步失败');
-      end;
-    except
-      on e:Exception do
-      begin
-        WriteLog(FOut.FData+'提货单同步失败'+e.Message);
-      end;
-    end;
-  end; }
-  {$ENDIF}
   //if SaveBillSendMsgWx(FOut.FData) then nData:=FOut.FData+'开单发送微信消息成功！';
 end;
 
@@ -5839,12 +5808,13 @@ var nIdx: Integer;
     nStr,nP,nFix,nRID,nCus,nBill,nZK: string;
     nOut:TWorkerBusinessCommand;
     nDBZhiKa:TDataSet;
-    nHint:string;
+    nHint,nLineRecID:string;
+    nSendValue:Double;
 begin
   Result := False;
   //init
 
-  nStr := 'Select L_ZhiKa,L_Value,L_Price,L_CusID,L_OutFact,L_ZKMoney From %s ' +
+  nStr := 'Select L_ZhiKa,L_Value,L_Price,L_CusID,L_OutFact,L_ZKMoney,L_LineRecID From %s ' +
           'Where L_ID=''%s''';
   nStr := Format(nStr, [sTable_Bill, FIn.FData]);
 
@@ -5873,6 +5843,7 @@ begin
 
     nVal := FieldByName('L_Value').AsFloat;
     nMoney := Float2Float(nVal*FieldByName('L_Price').AsFloat, cPrecision, True);
+    nLineRecID := FieldByName('L_LineRecID').AsString;
   end;
                    
   nStr := 'Select R_ID,T_HKBills,T_Bill From %s ' +
@@ -5971,11 +5942,6 @@ begin
       //释放冻结金
     end;
 
-    nStr := 'Update %s Set D_Value=D_Value+(%.2f) Where D_ZID=''%s''';
-    nStr := Format(nStr, [sTable_ZhiKaDtl, nVal, nZK]);
-    //xxxxx
-    gDBConnManager.WorkerExec(FDBConn, nStr);
-
     //--------------------------------------------------------------------------
     nStr := Format('Select * From %s Where 1<>1', [sTable_Bill]);
     //only for fields
@@ -6005,27 +5971,25 @@ begin
     gDBConnManager.WorkerExec(FDBConn, nStr);
     
     FDBConn.FConn.CommitTrans;
+
+    nStr := 'select IsNull(SUM(L_Value),''0'') as SendValue from %s where L_LineRecID=''%s'' ';
+    nStr := Format(nStr,[sTable_Bill, nLineRecID]);
+    with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+    if RecordCount > 0 then
+    begin
+      nSendValue := Fields[0].AsFloat;
+    end;
+
+    nStr := 'Update %s Set D_Value=D_TotalValue-(%.2f) Where D_RECID=''%s''';
+    nStr := Format(nStr, [sTable_ZhiKaDtl, nSendValue, nLineRecID]);
+    //xxxxx
+    gDBConnManager.WorkerExec(FDBConn, nStr);
+    
     Result := True;
   except
     FDBConn.FConn.RollbackTrans;
     raise;
   end;
-  {$IFDEF QLS}
-  {if (Result) and (GetOnLineModel=sFlag_Yes) then
-  begin
-    try
-      if not TWorkerBusinessCommander.CallMe(cBC_SyncDelSBillAX,FIn.FData,'',@nOut) then
-      begin
-        WriteLog(FIn.FData+'删除提货单同步失败');
-      end;
-    except
-      on e:Exception do
-      begin
-        WriteLog(FIn.FData+'删除提货单同步失败'+e.Message);
-      end;
-    end;
-  end; }
-  {$ENDIF}
   {if Result then
   begin
     if DelBillSendMsgWx(FIn.FData) then nData:=FIn.FData+'删单发送微信消息成功！';
@@ -6795,14 +6759,15 @@ begin
           nBxz:=False;
         end else
         begin
-          {if not TWorkerBusinessCommander.CallMe(cBC_GetTriangleTrade,    //获取是否三角贸易
+          if not TWorkerBusinessCommander.CallMe(cBC_GetTriangleTrade,    //获取是否三角贸易
                 nBills[0].FZhiKa, '', @nOut) then
           begin
             nData := nOut.FData;
             Exit;
           end;
           nTriaTrade:=nOut.FData;
-          if nTriaTrade = sFlag_Yes then }   // 三角贸易
+          if nTriaTrade = sFlag_Yes then FTriaTrade := '1';   // 三角贸易
+          WriteLog('贸易类型：'+FTriaTrade);
           if FTriaTrade = '1' then    // 三角贸易
           begin
             if nOnLineModel=sFlag_Yes then   //在线模式，远程获取客户资金额度
@@ -6834,9 +6799,6 @@ begin
                   Result:=True;
                   Exit;
                 end;
-                WriteLog(nBills[0].FID+'在线资金：'+Floattostr(nAxMoney));
-                //WriteLog(nBills[0].FCusID+'冻结资金：'+Floattostr(Float2Float(FPrice * FValue, cPrecision, False)));
-                //nAxMoney:=nAxMoney+Float2Float(FPrice * FValue, cPrecision, False);
               end;
             end else
             begin
@@ -6866,9 +6828,6 @@ begin
                   Result:=True;
                   Exit;
                 end;
-                WriteLog(nBills[0].FID+'在线资金：'+Floattostr(nAxMoney));
-                //WriteLog(nBills[0].FCusID+'冻结资金：'+Floattostr(Float2Float(FPrice * FValue, cPrecision, False)));
-                //nAxMoney:=nAxMoney+Float2Float(FPrice * FValue, cPrecision, False);
               end;
               if not TWorkerBusinessCommander.CallMe(cBC_GetCustomerMoney,  //本地获取客户资金额度
                nBills[0].FZhiKa, '', @nOut) then
@@ -6883,6 +6842,17 @@ begin
               WriteLog(nBills[0].FCusID+'冻结资金：'+Floattostr(Float2Float(FPrice * FValue, cPrecision, False)));
               //客户可用金
             end;
+          end;
+          if nBxz and (nOnLineModel=sFlag_Yes) then
+          begin
+            nStr := 'select SUM(L_Value*L_Price) as L_TotalMoney from %s where L_BDAX<>''2'' and L_CusID=''%s'' ';
+            nStr := Format(nStr,[sTable_Bill, FCusID]);
+            with gDBConnManager.WorkerQuery(FDBConn, nStr) do
+            if RecordCount > 0 then
+            begin
+              nAxMoney := nAxMoney - Fields[0].AsFloat;
+            end;
+            WriteLog(nBills[0].FID+'在线资金：'+Floattostr(nAxMoney));
           end;
         end;
 
@@ -7009,15 +6979,15 @@ begin
 
           nUpdateVal := FValue-nVal;
           nSQL := 'Update %s Set D_Value=D_Value-(%.2f) ' +
-                  'Where D_ZID=''%s''';
-          nSQL := Format(nSQL, [sTable_ZhiKaDtl, nUpdateVal, FZhiKa]);
+                  'Where D_RECID=''%s''';
+          nSQL := Format(nSQL, [sTable_ZhiKaDtl, nUpdateVal, FRecID]);
           FListA.Add(nSQL); //更新纸卡余量
         end;
       end else
       begin
         nSQL := 'Update %s Set D_Value=D_Value+(%.2f) ' +
-                'Where D_ZID=''%s''';
-        nSQL := Format(nSQL, [sTable_ZhiKaDtl, FValue, FZhiKa]);
+                'Where D_RECID=''%s''';
+        nSQL := Format(nSQL, [sTable_ZhiKaDtl, FValue, FRecID]);
         FListA.Add(nSQL); //更新纸卡余量
       end;
     end;
@@ -8021,7 +7991,7 @@ begin
   end;
 
   nStr := 'Select O_ID,O_Card,O_ProID,O_ProName,O_Type,O_StockNo,' +
-          'O_StockName,O_Truck,O_Value,O_IfNeiDao ' +
+          'O_StockName,O_Truck,O_Value,O_BRecID,O_IfNeiDao ' +
           'From $OO oo ';
   //xxxxx
 
@@ -8058,6 +8028,8 @@ begin
 
       Values['O_Card']       := FieldByName('O_Card').AsString;
       Values['O_Value']      := FloatToStr(FieldByName('O_Value').AsFloat);
+      Values['O_BRecID']     := FieldByName('O_BRecID').AsString;
+
       Values['NeiDao']       := FieldByName('O_IfNeiDao').AsString;
     end;
   end;
@@ -8097,6 +8069,7 @@ begin
         FStatus     := sFlag_TruckNone;
         FNextStatus := sFlag_TruckNone;
 
+        FRecID      := Values['O_BRecID'];
         FNeiDao     := Values['NeiDao'];
         FSelected   := True;
       end;  
@@ -8153,6 +8126,7 @@ begin
         FMemo     := FieldByName('D_Memo').AsString;
         FYSValid  := FieldByName('D_YSResult').AsString;
 
+        FRecID      := Values['O_BRecID'];
         FNeiDao     := Values['NeiDao'];
         FSelected := True;
 
@@ -8460,7 +8434,8 @@ begin
 
       //if FYSValid <> sFlag_NO then  //验收成功，调整已收货量
       begin
-        nSQL := 'Update $OrderBase Set B_SentValue=B_SentValue+$Val ' +
+        nSQL := 'Update $OrderBase Set B_SentValue=B_SentValue+$Val, ' +
+                'B_RestValue=B_Value-B_SentValue-$Val '+
                 'Where B_ID = (select O_BID From $Order Where O_ID=''$ID'')';
         nSQL := MacroValue(nSQL, [MI('$OrderBase', sTable_OrderBase),
                 MI('$Order', sTable_Order),MI('$ID', FZhiKa),
@@ -8502,15 +8477,6 @@ begin
               ], sTable_OrderDtl, SF('D_ID', FID), False);
       FListA.Add(nSQL); //更新采购单
     end;
-
-    {$IFDEF XAZL}
-    nStr := nPound[0].FID;
-    if not TWorkerBusinessCommander.CallMe(cBC_SyncStockOrder, nStr, '', @nOut) then
-    begin
-      nData := nOut.FData;
-      Exit;
-    end;
-    {$ENDIF}
 
     nSQL := 'Select O_CType,O_Card From %s Where O_ID=''%s''';
     nSQL := Format(nSQL, [sTable_Order, nPound[0].FZhiKa]);
@@ -8565,24 +8531,6 @@ begin
       {$ENDIF}
     end;
   end;
-  {$IFDEF QLS}
-  {if (FIn.FExtParam = sFlag_TruckOut) and
-    (GetOnLineModel=sFlag_Yes) then
-  begin
-    nStr := nPound[0].FID;
-    try
-      if not TWorkerBusinessCommander.CallMe(cBC_SyncStockOrder,nStr,'',@nOut) then
-      begin
-        WriteLog(nStr+'采购磅单同步失败');
-      end;
-    except
-      on e:Exception do
-      begin
-        WriteLog(nStr+'采购磅单同步失败'+e.Message);
-      end;
-    end;
-  end;}
-  {$ENDIF}
 end;
 
 //Date: 2014-09-15

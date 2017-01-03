@@ -65,9 +65,6 @@ begin
     nStr := '远距读头';
     gHardwareHelper.LoadConfig(nCfg + '900MK.xml');
 
-    nStr := '蓝卡读卡器';
-    gBlueReader.LoadConfig(nCfg + 'BlueCardReader.XML');
-
     nStr := '近距读头';
     if not Assigned(g02NReader) then
     begin
@@ -158,10 +155,6 @@ begin
   gHardwareHelper.StartRead;
   //long reader
 
-  gBlueReader.OnCardArrived := WhenBlueReaderCardArrived;
-  if not gHardwareHelper.ConnHelper then gBlueReader.StartReader;
-  //blue reader, 如果不使用硬件守护服务器，则服务器独自读卡
-
   {$IFDEF HYRFID201}
   if Assigned(gHYReaderManager) then
   begin
@@ -220,10 +213,6 @@ begin
   gHardwareHelper.StopRead;
   gHardwareHelper.OnProce := nil;
   //reader
-
-  gBlueReader.StopReader;
-  gBlueReader.OnCardArrived := nil;
-  //blue reader
 
   {$IFDEF HYRFID201}
   if Assigned(gHYReaderManager) then

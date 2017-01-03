@@ -623,9 +623,7 @@ begin
     Exit;
   end;
 
-  if nReader <> '' then
-    //BlueOpenDoor(nReader);
-    gHYReaderManager.OpenDoor(nReader);
+  if (nReader <> '') and (Pos('V',nReader)<=0) then gHYReaderManager.OpenDoor(nReader);
   //抬杆
 
   for nIdx:=Low(nTrucks) to High(nTrucks) do
@@ -640,25 +638,26 @@ begin
       Exit;
     end;
     {$ENDIF}
-    {$IFDEF PrintBillMoney}
-    if CallBusinessCommand(cBC_GetZhiKaMoney,nTrucks[nIdx].FZhiKa,'',@nOut) then
-         nStr := #8 + nOut.FData
-    else nStr := #8 + '0';
-    {$ELSE}
-    nStr := '';
-    {$ENDIF}
 
-    nStr := nStr + #7 + nCardType;
+    nStr := #7 + nCardType;
     //磁卡类型
-
+    
     if (nPrinter = '') and (nHyprinter = '') then
-      gRemotePrinter.PrintBill(nTrucks[nIdx].FID + nStr)
-    else
+    begin
+      gRemotePrinter.PrintBill(nTrucks[nIdx].FID + nStr);
+      WriteHardHelperLog(nTrucks[nIdx].FID + nStr);
+    end else
     if (nPrinter <> '') and (nHyprinter <> '') then
-      gRemotePrinter.PrintBill(nTrucks[nIdx].FID + #11 + nHyprinter + #9 + nPrinter + nStr)
-    else if (nPrinter = '') then
-      gRemotePrinter.PrintBill(nTrucks[nIdx].FID + #11 + nHyprinter + nStr)
-    else if (nHyprinter = '') then
+    begin
+      gRemotePrinter.PrintBill(nTrucks[nIdx].FID + #11 + nHyprinter + #9 + nPrinter + nStr);
+      WriteHardHelperLog(nTrucks[nIdx].FID + #9 + nPrinter + nHyprinter + nStr);
+    end else
+    if (nPrinter = '') then
+    begin
+      gRemotePrinter.PrintBill(nTrucks[nIdx].FID + #11 + nHyprinter + nStr);
+      WriteHardHelperLog(nTrucks[nIdx].FID + #9 + nHyprinter + nStr);
+    end else
+    if (nHyprinter = '') then
     begin
       gRemotePrinter.PrintBill(nTrucks[nIdx].FID + #9 + nPrinter + nStr);
       WriteHardHelperLog(nTrucks[nIdx].FID + #9 + nPrinter + nStr);
@@ -724,7 +723,7 @@ var nStr: string;
 begin
   nDBConn := nil;
   {$IFDEF DEBUG}
-  WriteHardHelperLog('WhenReaderCardArrived进入.');
+  WriteHardHelperLog('WhenReaderCardArrived进入.'+nReader.FID+' 读头类型：'+nReader.FType);
   {$ENDIF}
 
   with gParamManager.ActiveParam^ do
@@ -789,22 +788,6 @@ begin
     gDBConnManager.ReleaseConnection(nDBConn);
   end;
 end;
-
-//Date: 2014-10-25
-//Parm: 读头数据
-//Desc: 华益读头磁卡动作
-//procedure WhenHYReaderCardArrived(const nReader: PHYReaderItem);
-//begin
-//  {$IFDEF DEBUG}
-//  WriteHardHelperLog(Format('华益标签 %s:%s', [nReader.FTunnel, nReader.FCard]));
-//  {$ENDIF}
-
-//  {$IFDEF JYZL}
-//  gHardwareHelper.SetReaderCard(nReader.FID, 'H' + nReader.FCard, False);
-//  {$ELSE}
-//  g02NReader.ActiveELabel(nReader.FID, nReader.FCard);
-//  {$ENDIF}
-//end;
 
 procedure WhenHYReaderCardArrived(const nReader: PHYReaderItem);   //2016-06-24 lih
 begin

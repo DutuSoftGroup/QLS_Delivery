@@ -63,9 +63,9 @@
   //华益读头
   {.$DEFINE GLPURCH} 
   //古浪采购
-  {.$DEFINE YDKP} 
+  {$DEFINE YDKP} 
   //永登、夏河、定西、平凉开票
-  {.$DEFINE XHPZ} 
+  {$DEFINE XHPZ} 
   //夏河、定西、平凉皮重
   {.$DEFINE ZXKP} 
   //漳县
