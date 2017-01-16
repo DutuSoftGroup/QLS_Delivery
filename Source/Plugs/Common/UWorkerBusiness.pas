@@ -5188,7 +5188,7 @@ begin
     end;
     if nBxz and (nOnLineModel=sFlag_Yes) then
     begin
-      nStr := 'select SUM(L_Value*L_Price) as L_TotalMoney from %s where L_BDAX <>''1'' and L_CusID=''%s'' ';
+      nStr := 'select IsNull(SUM(L_Value*L_Price),''0'') as L_TotalMoney from %s where L_BDAX = ''2'' and L_CusID=''%s'' ';
       nStr := Format(nStr,[sTable_Bill, FListA.Values['CusID']]);
       with gDBConnManager.WorkerQuery(FDBConn, nStr) do
       if RecordCount > 0 then
@@ -6845,7 +6845,7 @@ begin
           end;
           if nBxz and (nOnLineModel=sFlag_Yes) then
           begin
-            nStr := 'select SUM(L_Value*L_Price) as L_TotalMoney from %s where L_BDAX<>''2'' and L_CusID=''%s'' ';
+            nStr := 'select IsNull(SUM(L_Value*L_Price),''0'') as L_TotalMoney from %s where L_BDAX=''2'' and L_CusID=''%s'' ';
             nStr := Format(nStr,[sTable_Bill, FCusID]);
             with gDBConnManager.WorkerQuery(FDBConn, nStr) do
             if RecordCount > 0 then
